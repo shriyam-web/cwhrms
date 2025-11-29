@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   try {
     console.log("[API] Check-in-public: Processing request")
     const body = await req.json()
-    const { encryptedToken, employeeCode, deviceId, latitude, longitude, clientTime, type } = checkInSchema.parse(body)
+    const { encryptedToken, employeeCode, deviceId, latitude, longitude, clientTime, timezoneOffset, type } = checkInSchema.parse(body)
     console.log("[API] Check-in-public: Payload validated - Type:", type)
 
     let decrypted: string
@@ -33,11 +33,15 @@ export async function POST(req: NextRequest) {
     const utcTime = clientTime ? new Date(clientTime) : new Date()
     console.log("[API] Using time:", utcTime.toISOString(), "(UTC)")
     
-    const istDate = new Date(utcTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-    const today = new Date(istDate)
+    const offset = timezoneOffset || -330
+    const clientLocalTime = new Date(utcTime.getTime() - offset * 60 * 1000)
+    const today = new Date(clientLocalTime)
     today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowLocal = new Date(today)
+    tomorrowLocal.setDate(tomorrowLocal.getDate() + 1)
+    
+    const todayUTC = new Date(today.getTime() + offset * 60 * 1000)
+    const tomorrowUTC = new Date(tomorrowLocal.getTime() + offset * 60 * 1000)
 
     const [qrTokensCollection, employeeCollection, attendanceCollection] = await Promise.all([
       db.qrTokens(),
@@ -66,8 +70,8 @@ export async function POST(req: NextRequest) {
     const existingCheckIn = await attendanceCollection.findOne({
       employeeCode,
       checkInTime: {
-        $gte: today,
-        $lt: tomorrow,
+        $gte: todayUTC,
+        $lt: tomorrowUTC,
       },
       checkOutTime: null,
     })
