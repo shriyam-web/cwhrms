@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,7 @@ function CheckinContent() {
     if (status === "submitting" && employeeInfo && token && !loading) {
       handleSubmitCheckIn()
     }
-  }, [status, employeeInfo, token])
+  }, [status, employeeInfo, token, loading])
 
   const handleVerifyEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -110,7 +110,7 @@ function CheckinContent() {
       return
     }
 
-    setStatus("submitting")
+    setLoading(true)
 
     try {
       const deviceId = `device-${Date.now()}`
@@ -142,6 +142,7 @@ function CheckinContent() {
       setLoading(false)
       setStatus("idle")
       setEmployeeInfo(null)
+      console.error("[Attendance Error]", error)
       setMessage(error instanceof Error ? error.message : "Check-in failed")
       setMessageType("error")
     }
