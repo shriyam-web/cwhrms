@@ -2,10 +2,13 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db-wrapper"
 import { verifyToken } from "@/lib/auth"
 import { decryptToken } from "@/lib/encryption"
+import { db } from "@/lib/db"
 import { z } from "zod"
+import { ObjectId } from "mongodb"
 
 const checkInSchema = z.object({
   encryptedToken: z.string(),
+  employeeCode: z.string().min(1, "Employee code is required"),
   deviceId: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { encryptedToken, deviceId, latitude, longitude } = checkInSchema.parse(body)
+    const { encryptedToken, employeeCode, deviceId, latitude, longitude } = checkInSchema.parse(body)
 
     // Decrypt and find QR token
     let decrypted: string
@@ -51,13 +54,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "QR code expired" }, { status: 400 })
     }
 
-    // Get employee profile
-    const employeeProfile = await prisma.employeeProfile.findUnique({
-      where: { userId: payload.id },
-    })
+    // Get employee by employee code
+    const employeeCollection = await db.employeeProfiles()
+    const employee = await employeeCollection.findOne({ employeeCode })
 
-    if (!employeeProfile) {
-      return NextResponse.json({ error: "Employee profile not found" }, { status: 404 })
+    if (!employee) {
+      return NextResponse.json({ error: "Employee not found" }, { status: 404 })
+    }
+
+    const employeeProfile = {
+      id: employee._id.toString(),
+      userId: employee.userId,
+      name: employee.name,
+      email: employee.email,
     }
 
     // Check if already checked in today
@@ -100,7 +109,7 @@ export async function POST(req: NextRequest) {
     const checkIn = await prisma.attendanceLog.create({
       data: {
         employeeId: employeeProfile.id,
-        userId: payload.id,
+        userId: employeeProfile.userId,
         checkInTime: new Date(),
         status: "PRESENT",
         deviceId,

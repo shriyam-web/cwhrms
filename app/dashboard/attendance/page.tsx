@@ -1,11 +1,13 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
-import { QrCode, Clock, LogOut } from "lucide-react"
+import { QrCode, Clock, LogOut, AlertCircle } from "lucide-react"
 import { DataTable, DataTableHead, DataTableBody, DataTableRow, DataTableHeader, DataTableCell } from "@/components/dashboard/data-table"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { useAuth } from "@/lib/use-auth"
 
 const attendanceLogs = [
   { id: 1, name: "Rajesh Kumar", checkIn: "09:15 AM", checkOut: "06:30 PM", status: "Present" },
@@ -15,6 +17,39 @@ const attendanceLogs = [
 
 export default function AttendancePage() {
   const router = useRouter()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (!loading && user && user.role !== "HR") {
+      router.push("/dashboard")
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!user || user.role !== "HR") {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 rounded-lg bg-red-50 p-6 text-red-900">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold">Access Denied</h3>
+              <p className="text-sm">Only HR users can access attendance management.</p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>

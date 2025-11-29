@@ -44,13 +44,15 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Generate QR code
-    const qrCodeDataUrl = await QRCode.toDataURL(encryptedToken)
+    // Generate QR code with full URL
+    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://hrms.citywitty.com"}/dashboard/attendance/scan?token=${encodeURIComponent(encryptedToken)}`
+    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl)
 
     return NextResponse.json(
       {
         qrCode: qrCodeDataUrl,
         token: uniqueToken,
+        qrUrl,
         expiresIn: officeSettings.qrRotationInterval || 30,
         expiresAt: qrToken.expiresAt,
       },
