@@ -37,8 +37,8 @@ function CheckinContent() {
       if (minutes <= CHECKIN_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
     } else {
-      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD) return "ontime"
-      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD * 2) return "latewindow"
+      if (minutes <= CHECKOUT_TIME) return "ontime"
+      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
     }
   }
@@ -82,12 +82,11 @@ function CheckinContent() {
         attendanceType === "checkin" ? "You are late for check-in" : "You are late for check-out"
       )
       setMessageType("error")
-      return
     } else if (currentStatus === "latewindow") {
       setMessage(
         attendanceType === "checkin"
           ? "You are in the late window (15 min grace period)"
-          : "You are in the late window (30 min grace period)"
+          : "You are in the late window (15 min grace period)"
       )
       setMessageType("warning")
     }
