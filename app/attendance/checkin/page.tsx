@@ -74,15 +74,26 @@ function CheckinContent() {
 
   const getLocationAsync = () => {
     if (navigator.geolocation) {
+      const timeout = setTimeout(() => {
+        setStatus("submitting")
+      }, 10000)
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(timeout)
           setLatitude(position.coords.latitude)
           setLongitude(position.coords.longitude)
+          setStatus("submitting")
         },
         () => {
+          clearTimeout(timeout)
           console.warn("Geolocation failed")
+          setStatus("submitting")
         },
+        { timeout: 10000, enableHighAccuracy: false }
       )
+    } else {
+      setStatus("submitting")
     }
   }
 
