@@ -70,17 +70,17 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Mark QR as used first (faster response)
+    await prisma.qrToken.update({
+      where: { id: qrToken.id },
+      data: { isUsed: true, usedAt: new Date() },
+    })
+
     if (existingCheckIn) {
       // Check out
       const checkOut = await prisma.attendanceLog.update({
         where: { id: existingCheckIn.id },
         data: { checkOutTime: new Date() },
-      })
-
-      // Mark QR as used
-      await prisma.qrToken.update({
-        where: { id: qrToken.id },
-        data: { isUsed: true, usedAt: new Date() },
       })
 
       return NextResponse.json(
@@ -106,12 +106,6 @@ export async function POST(req: NextRequest) {
         latitude,
         longitude,
       },
-    })
-
-    // Mark QR as used
-    await prisma.qrToken.update({
-      where: { id: qrToken.id },
-      data: { isUsed: true, usedAt: new Date() },
     })
 
     return NextResponse.json(

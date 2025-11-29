@@ -1,41 +1,44 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Clock, LogOut, AlertCircle } from "lucide-react"
-import { DataTable, DataTableHead, DataTableBody, DataTableRow, DataTableHeader, DataTableCell } from "@/components/dashboard/data-table"
-import { StatusBadge } from "@/components/dashboard/status-badge"
 import { useAuth } from "@/lib/use-auth"
 import { apiClient } from "@/lib/api-client"
+import { Clock, LogOut, MapPin, AlertCircle } from "lucide-react"
+import { DataTable, DataTableHead, DataTableBody, DataTableRow, DataTableHeader, DataTableCell } from "@/components/dashboard/data-table"
 
 interface AttendanceLog {
   id: string
-  employeeName: string
+  checkInTime: string
+  checkOutTime: string | null
+  status: string
+  latitude: number | null
+  longitude: number | null
+  deviceId: string | null
   checkInFormatted: string
   checkOutFormatted: string | null
-  status: string
 }
 
-export default function AttendancePage() {
-  const router = useRouter()
+export default function MyAttendancePage() {
   const { user, loading } = useAuth()
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([])
   const [dataLoading, setDataLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [month, setMonth] = useState(new Date().getMonth() + 1)
   const [year, setYear] = useState(new Date().getFullYear())
 
   const fetchAttendance = async () => {
     setDataLoading(true)
+    setError(null)
     try {
       const response = await apiClient.get<any>(
-        `/api/attendance/all-logs?month=${month}&year=${year}`
+        `/api/attendance/my-logs?month=${month}&year=${year}`
       )
       setAttendanceLogs(response.attendanceLogs || [])
-    } catch (error) {
-      console.error("Failed to fetch attendance:", error)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load attendance")
       setAttendanceLogs([])
     } finally {
       setDataLoading(false)
@@ -43,13 +46,7 @@ export default function AttendancePage() {
   }
 
   useEffect(() => {
-    if (!loading && user && user.role !== "HR") {
-      router.push("/dashboard")
-    }
-  }, [user, loading, router])
-
-  useEffect(() => {
-    if (user && user.role === "HR" && !loading) {
+    if (user && !loading) {
       fetchAttendance()
     }
   }, [user, loading, month, year])
@@ -64,17 +61,12 @@ export default function AttendancePage() {
     )
   }
 
-  if (!user || user.role !== "HR") {
+  if (!user) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 rounded-lg bg-red-50 p-6 text-red-900">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold">Access Denied</h3>
-              <p className="text-sm">Only HR users can access attendance management.</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 rounded-lg bg-red-50 p-6 text-red-900">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <p className="text-sm">Please log in to view your attendance</p>
         </div>
       </DashboardLayout>
     )
@@ -82,18 +74,12 @@ export default function AttendancePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 animate-slideUp">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-              Attendance
-            </h1>
-            <p className="text-muted-foreground mt-2">Track employee attendance</p>
-          </div>
-          <Button onClick={() => router.push("/dashboard/attendance/qr-display")} className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
-            <QrCode className="h-4 w-4" />
-            View QR Code
-          </Button>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+            My Attendance
+          </h1>
+          <p className="text-muted-foreground mt-2">View your check-in and check-out records</p>
         </div>
 
         <Card className="p-6">
@@ -126,7 +112,19 @@ export default function AttendancePage() {
                 ))}
               </select>
             </div>
+            <div className="flex items-end">
+              <Button onClick={fetchAttendance} disabled={dataLoading}>
+                {dataLoading ? "Loading..." : "Refresh"}
+              </Button>
+            </div>
           </div>
+
+          {error && (
+            <div className="flex gap-2 rounded-lg bg-red-50 p-4 text-red-900 mb-4">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
 
           {attendanceLogs.length === 0 && !dataLoading && (
             <div className="text-center py-8 text-muted-foreground">
@@ -137,34 +135,59 @@ export default function AttendancePage() {
           {attendanceLogs.length > 0 && (
             <DataTable searchPlaceholder="Search attendance...">
               <DataTableHead>
-                <DataTableHeader>Name</DataTableHeader>
                 <DataTableHeader>Check In</DataTableHeader>
                 <DataTableHeader>Check Out</DataTableHeader>
                 <DataTableHeader>Status</DataTableHeader>
+                <DataTableHeader>Location</DataTableHeader>
               </DataTableHead>
               <DataTableBody>
                 {attendanceLogs.map((log) => (
                   <DataTableRow key={log.id}>
                     <DataTableCell>
-                      <div className="font-medium">{log.employeeName}</div>
-                    </DataTableCell>
-                    <DataTableCell>
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span>{log.checkInFormatted}</span>
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="font-medium">{log.checkInFormatted}</p>
+                        </div>
                       </div>
                     </DataTableCell>
                     <DataTableCell>
                       <div className="flex items-center gap-2">
-                        <LogOut className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                        <span>{log.checkOutFormatted || "Not checked out"}</span>
+                        {log.checkOutFormatted ? (
+                          <>
+                            <LogOut className="h-4 w-4 text-slate-600" />
+                            <p>{log.checkOutFormatted}</p>
+                          </>
+                        ) : (
+                          <p className="text-amber-600">Not checked out</p>
+                        )}
                       </div>
                     </DataTableCell>
                     <DataTableCell>
-                      <StatusBadge 
-                        status={log.status} 
-                        variant={log.status === "PRESENT" ? "success" : "warning"}
-                      />
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                        log.status === "PRESENT"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {log.status}
+                      </span>
+                    </DataTableCell>
+                    <DataTableCell>
+                      {log.latitude && log.longitude ? (
+                        <div className="flex items-center gap-1 text-xs">
+                          <MapPin className="h-3 w-3" />
+                          <a
+                            href={`https://maps.google.com/?q=${log.latitude},${log.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            View
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No location</span>
+                      )}
                     </DataTableCell>
                   </DataTableRow>
                 ))}

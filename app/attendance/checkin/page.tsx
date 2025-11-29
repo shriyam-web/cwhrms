@@ -127,7 +127,7 @@ function CheckinContent() {
         setEmployeeCode("")
         setMessage("")
         setMessageType(null)
-      }, 3000)
+      }, 2000)
     } catch (error) {
       setLoading(false)
       setStatus("idle")
