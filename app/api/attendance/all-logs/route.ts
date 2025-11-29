@@ -62,9 +62,9 @@ export async function GET(req: NextRequest) {
           status: status,
           latitude: log.latitude,
           longitude: log.longitude,
-          checkInFormatted: new Date(log.checkInTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+          checkInFormatted: log.checkInTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
           checkOutFormatted: log.checkOutTime 
-            ? new Date(log.checkOutTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+            ? log.checkOutTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
             : "Not checked out",
         }
       })
