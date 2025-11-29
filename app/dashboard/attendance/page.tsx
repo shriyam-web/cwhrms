@@ -44,7 +44,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     if (!loading && user && user.role !== "HR") {
-      router.push("/dashboard")
+      router.push("/dashboard/my-attendance")
     }
   }, [user, loading, router])
 
