@@ -185,7 +185,7 @@ function CheckinContent() {
             <Label htmlFor="employeeCode">Employee Code</Label>
             <Input
               id="employeeCode"
-              placeholder="e.g., CW/GNO-2707"
+              placeholder="e.g., CW/XXX-DDMM"
               value={employeeCode}
               onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
               disabled={loading}
