@@ -10,13 +10,15 @@ const checkInSchema = z.object({
   deviceId: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  clientTime: z.string().optional(),
+  timezoneOffset: z.number().optional(),
 })
 
 export async function POST(req: NextRequest) {
   try {
     console.log("[API] Check-in-public: Processing request")
     const body = await req.json()
-    const { encryptedToken, employeeCode, deviceId, latitude, longitude } = checkInSchema.parse(body)
+    const { encryptedToken, employeeCode, deviceId, latitude, longitude, clientTime } = checkInSchema.parse(body)
     console.log("[API] Check-in-public: Payload validated")
 
     let decrypted: string
@@ -27,8 +29,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid QR code" }, { status: 400 })
     }
 
-    const now = new Date()
-    const today = new Date(now)
+    const utcTime = clientTime ? new Date(clientTime) : new Date()
+    const istTime = new Date(utcTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+    console.log("[API] Using time:", istTime.toISOString(), "(IST)")
+    const today = new Date(istTime)
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "QR code not found" }, { status: 404 })
     }
 
-    if (now > qrToken.expiresAt) {
+    if (istTime > qrToken.expiresAt) {
       return NextResponse.json({ error: "QR code expired" }, { status: 400 })
     }
 
@@ -70,14 +74,14 @@ export async function POST(req: NextRequest) {
     if (!qrToken.isUsed) {
       await qrTokensCollection.updateOne(
         { _id: qrToken._id },
-        { $set: { isUsed: true, usedAt: now } }
+        { $set: { isUsed: true, usedAt: istTime } }
       )
     }
 
     if (existingCheckIn) {
       await attendanceCollection.updateOne(
         { _id: existingCheckIn._id },
-        { $set: { checkOutTime: now } }
+        { $set: { checkOutTime: istTime } }
       )
       console.log("[API] Check-out recorded for:", employeeCode)
 
@@ -86,7 +90,7 @@ export async function POST(req: NextRequest) {
           message: "Check-out successful",
           type: "checkout",
           employeeName: employee.name,
-          time: now.toLocaleString(),
+          time: istTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         },
         { status: 200 },
       )
@@ -95,14 +99,14 @@ export async function POST(req: NextRequest) {
     const insertResult = await attendanceCollection.insertOne({
       employeeId,
       userId: employee.userId,
-      checkInTime: now,
+      checkInTime: istTime,
       checkOutTime: null,
       status: "PRESENT",
       deviceId: deviceId || null,
       latitude: latitude || null,
       longitude: longitude || null,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: istTime,
+      updatedAt: istTime,
     })
     console.log("[API] Check-in recorded for:", employeeCode, "ID:", insertResult.insertedId)
 
@@ -111,7 +115,7 @@ export async function POST(req: NextRequest) {
         message: "Check-in successful",
         type: "checkin",
         employeeName: employee.name,
-        time: now.toLocaleString(),
+        time: istTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       },
       { status: 200 },
     )

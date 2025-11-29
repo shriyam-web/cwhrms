@@ -76,6 +76,8 @@ function CheckinContent() {
         encryptedToken: token,
         employeeCode: employeeCode.trim(),
         deviceId: `device-${Date.now()}`,
+        clientTime: new Date().toISOString(),
+        timezoneOffset: new Date().getTimezoneOffset(),
       } as any
 
       if (latitude !== null) payload.latitude = latitude
