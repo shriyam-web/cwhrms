@@ -63,7 +63,7 @@ function CheckinContent() {
 
       setEmployeeInfo(verifyResponse.employee)
       setStatus("gettingLocation")
-      await getLocation()
+      getLocationAsync()
     } catch (error) {
       setLoading(false)
       setStatus("idle")
@@ -72,27 +72,18 @@ function CheckinContent() {
     }
   }
 
-  const getLocation = async () => {
-    return new Promise<void>((resolve) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setLatitude(position.coords.latitude)
-            setLongitude(position.coords.longitude)
-            setStatus("submitting")
-            resolve()
-          },
-          (error) => {
-            console.warn("Geolocation error:", error)
-            setStatus("submitting")
-            resolve()
-          },
-        )
-      } else {
-        setStatus("submitting")
-        resolve()
-      }
-    })
+  const getLocationAsync = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude)
+          setLongitude(position.coords.longitude)
+        },
+        () => {
+          console.warn("Geolocation failed")
+        },
+      )
+    }
   }
 
   const handleSubmitCheckIn = async () => {
@@ -101,6 +92,8 @@ function CheckinContent() {
       setMessageType("error")
       return
     }
+
+    setStatus("submitting")
 
     try {
       const deviceId = `device-${Date.now()}`
