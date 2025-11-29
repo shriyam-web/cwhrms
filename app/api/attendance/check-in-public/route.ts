@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "QR code not found" }, { status: 404 })
     }
 
-    if (istTime > qrToken.expiresAt) {
+    if (utcTime > qrToken.expiresAt) {
+      console.error("[API] QR expired - utcTime:", utcTime.toISOString(), "expiresAt:", qrToken.expiresAt.toISOString())
       return NextResponse.json({ error: "QR code expired" }, { status: 400 })
     }
 
