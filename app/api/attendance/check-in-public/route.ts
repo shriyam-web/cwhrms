@@ -84,8 +84,9 @@ export async function POST(req: NextRequest) {
     if (!qrToken.isUsed) {
       await qrTokensCollection.updateOne(
         { _id: qrToken._id },
-        { $set: { isUsed: true, usedAt: istTime } }
+        { $set: { isUsed: true, usedAt: istTime, expiresAt: istTime } }
       )
+      console.log("[API] QR code immediately expired after first use")
     }
 
     if (type === "checkout" && existingCheckIn) {
