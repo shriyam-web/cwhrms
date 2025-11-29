@@ -30,11 +30,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid QR code" }, { status: 400 })
     }
 
-    const utcTime = clientTime ? new Date(clientTime) : new Date()
-    console.log("[API] Using time:", utcTime.toISOString(), "(UTC)")
-    
+    const clientLocalTime = clientTime ? new Date(clientTime) : new Date()
     const offset = timezoneOffset || -330
-    const clientLocalTime = new Date(utcTime.getTime() - offset * 60 * 1000)
+    const utcTime = new Date(clientLocalTime.getTime() + offset * 60 * 1000)
+    console.log("[API] Client local time:", clientLocalTime.toISOString(), "Offset:", offset, "UTC time:", utcTime.toISOString())
+    
     const today = new Date(clientLocalTime)
     today.setHours(0, 0, 0, 0)
     const tomorrowLocal = new Date(today)
