@@ -22,9 +22,10 @@ function CheckinContent() {
   } | null>(null)
   const [attendanceType, setAttendanceType] = useState<"checkin" | "checkout">("checkin")
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
-  const [statusDisplay, setStatusDisplay] = useState<"ontime" | "latewindow" | "late" | null>(null)
+  const [statusDisplay, setStatusDisplay] = useState<"early" | "ontime" | "latewindow" | "late" | null>(null)
 
   const CHECKIN_TIME = 10 * 60
+  const CHECKOUT_EARLY_TIME = 18 * 60 + 25
   const CHECKOUT_TIME = 18 * 60 + 30
   const GRACE_PERIOD = 15
 
@@ -37,8 +38,8 @@ function CheckinContent() {
       if (minutes <= CHECKIN_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
     } else {
+      if (minutes < CHECKOUT_EARLY_TIME) return "early"
       if (minutes <= CHECKOUT_TIME) return "ontime"
-      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
     }
   }
@@ -189,18 +190,30 @@ function CheckinContent() {
             <span className="text-sm font-semibold text-gray-700">Status</span>
             <span
               className={`text-sm font-bold px-3 py-1 rounded-full ${
-                statusDisplay === "ontime"
-                  ? "bg-green-100 text-green-800"
-                  : statusDisplay === "latewindow"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
+                attendanceType === "checkin"
+                  ? statusDisplay === "ontime"
+                    ? "bg-green-100 text-green-800"
+                    : statusDisplay === "latewindow"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  : statusDisplay === "early"
+                    ? "bg-red-100 text-red-800"
+                    : statusDisplay === "ontime"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-blue-100 text-blue-800"
               }`}
             >
-              {statusDisplay === "ontime"
-                ? "On Time"
-                : statusDisplay === "latewindow"
-                  ? "Late Window"
-                  : "Late"}
+              {attendanceType === "checkin"
+                ? statusDisplay === "ontime"
+                  ? "On Time"
+                  : statusDisplay === "latewindow"
+                    ? "Late Window"
+                    : "Late"
+                : statusDisplay === "early"
+                  ? "Too Early"
+                  : statusDisplay === "ontime"
+                    ? "On Time"
+                    : "Late"}
             </span>
           </div>
         </div>

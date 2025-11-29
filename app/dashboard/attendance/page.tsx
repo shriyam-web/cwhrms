@@ -18,6 +18,28 @@ interface AttendanceLog {
   checkOutFormatted: string | null
   status: string
   arrivalStatus: string
+  checkInTime?: string
+  checkOutTime?: string | null
+}
+
+const calculateTotalHours = (checkIn?: string, checkOut?: string | null): string => {
+  if (!checkIn || !checkOut) return "-"
+  
+  try {
+    const checkInDate = new Date(checkIn)
+    const checkOutDate = new Date(checkOut)
+    const diffMs = checkOutDate.getTime() - checkInDate.getTime()
+    const diffHours = diffMs / (1000 * 60 * 60)
+    
+    if (diffHours < 0) return "-"
+    
+    const hours = Math.floor(diffHours)
+    const minutes = Math.round((diffHours - hours) * 60)
+    
+    return `${hours}h ${minutes}m`
+  } catch {
+    return "-"
+  }
 }
 
 export default function AttendancePage() {
@@ -141,6 +163,7 @@ export default function AttendancePage() {
                 <DataTableHeader>Name</DataTableHeader>
                 <DataTableHeader>Check In</DataTableHeader>
                 <DataTableHeader>Check Out</DataTableHeader>
+                <DataTableHeader>Total Hours</DataTableHeader>
                 <DataTableHeader>Status</DataTableHeader>
               </DataTableHead>
               <DataTableBody>
@@ -169,6 +192,12 @@ export default function AttendancePage() {
                       <div className="flex items-center gap-2">
                         <LogOut className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                         <span>{log.checkOutFormatted || "Not checked out"}</span>
+                      </div>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                        <span className="font-medium">{calculateTotalHours(log.checkInTime, log.checkOutTime)}</span>
                       </div>
                     </DataTableCell>
                     <DataTableCell>
