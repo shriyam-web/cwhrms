@@ -20,6 +20,7 @@ function CheckinContent() {
     email: string
     employeeCode: string
   } | null>(null)
+  const [attendanceType, setAttendanceType] = useState<"checkin" | "checkout">("checkin")
 
   useEffect(() => {
     const tokenParam = searchParams.get("token")
@@ -78,6 +79,7 @@ function CheckinContent() {
         deviceId: `device-${Date.now()}`,
         clientTime: new Date().toISOString(),
         timezoneOffset: new Date().getTimezoneOffset(),
+        type: attendanceType,
       } as any
 
       if (latitude !== null) payload.latitude = latitude
@@ -149,6 +151,36 @@ function CheckinContent() {
         )}
 
         <form onSubmit={handleSubmitAttendance} className="space-y-4">
+          <div className="space-y-3">
+            <Label>Attendance Type</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="attendanceType"
+                  value="checkin"
+                  checked={attendanceType === "checkin"}
+                  onChange={(e) => setAttendanceType(e.target.value as "checkin" | "checkout")}
+                  disabled={loading}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Check In</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="attendanceType"
+                  value="checkout"
+                  checked={attendanceType === "checkout"}
+                  onChange={(e) => setAttendanceType(e.target.value as "checkin" | "checkout")}
+                  disabled={loading}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Check Out</span>
+              </label>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="employeeCode">Employee Code</Label>
             <Input

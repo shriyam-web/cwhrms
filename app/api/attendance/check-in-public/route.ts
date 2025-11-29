@@ -12,14 +12,15 @@ const checkInSchema = z.object({
   longitude: z.number().optional(),
   clientTime: z.string().optional(),
   timezoneOffset: z.number().optional(),
+  type: z.enum(["checkin", "checkout"]).optional().default("checkin"),
 })
 
 export async function POST(req: NextRequest) {
   try {
     console.log("[API] Check-in-public: Processing request")
     const body = await req.json()
-    const { encryptedToken, employeeCode, deviceId, latitude, longitude, clientTime } = checkInSchema.parse(body)
-    console.log("[API] Check-in-public: Payload validated")
+    const { encryptedToken, employeeCode, deviceId, latitude, longitude, clientTime, type } = checkInSchema.parse(body)
+    console.log("[API] Check-in-public: Payload validated - Type:", type)
 
     let decrypted: string
     try {
@@ -61,16 +62,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Employee not found" }, { status: 404 })
     }
 
-    const employeeId = employee._id.toString()
-
     const existingCheckIn = await attendanceCollection.findOne({
-      employeeId,
+      employeeCode,
       checkInTime: {
         $gte: today,
         $lt: tomorrow,
       },
       checkOutTime: null,
     })
+
+    if (type === "checkin" && existingCheckIn) {
+      console.error("[API] Duplicate check-in attempt:", employeeCode)
+      return NextResponse.json({ error: "Already checked in. Please check out first." }, { status: 400 })
+    }
+
+    if (type === "checkout" && !existingCheckIn) {
+      console.error("[API] Check-out without check-in:", employeeCode)
+      return NextResponse.json({ error: "No active check-in found. Please check in first." }, { status: 400 })
+    }
 
     if (!qrToken.isUsed) {
       await qrTokensCollection.updateOne(
@@ -79,10 +88,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (existingCheckIn) {
+    if (type === "checkout" && existingCheckIn) {
       await attendanceCollection.updateOne(
         { _id: existingCheckIn._id },
-        { $set: { checkOutTime: istTime } }
+        { $set: { checkOutTime: istTime, updatedAt: istTime } }
       )
       console.log("[API] Check-out recorded for:", employeeCode)
 
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     const insertResult = await attendanceCollection.insertOne({
-      employeeId,
+      employeeCode,
       userId: employee.userId,
       checkInTime: istTime,
       checkOutTime: null,
