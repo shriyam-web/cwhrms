@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Generate QR code with full URL
-    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://hrms.citywitty.com"}/dashboard/attendance/scan?token=${encodeURIComponent(encryptedToken)}`
+    // Generate QR code with full URL to public checkin page
+    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://hrms.citywitty.com"}/attendance/checkin?token=${encodeURIComponent(encryptedToken)}`
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl)
 
     return NextResponse.json(
