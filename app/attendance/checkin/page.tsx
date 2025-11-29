@@ -32,6 +32,12 @@ function CheckinContent() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    if (status === "submitting" && employeeInfo && token && !loading) {
+      handleSubmitCheckIn()
+    }
+  }, [status, employeeInfo, token])
+
   const handleVerifyEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -241,7 +247,7 @@ function CheckinContent() {
                 className="w-full"
                 size="lg"
                 onClick={handleSubmitCheckIn}
-                disabled={loading || status === "gettingLocation"}
+                disabled={loading || status === "gettingLocation" || status === "submitting"}
               >
                 {loading && status === "submitting" ? (
                   <>
