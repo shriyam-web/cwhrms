@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import React, { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,13 +14,34 @@ function CheckinContent() {
   const [employeeCode, setEmployeeCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
-  const [messageType, setMessageType] = useState<"success" | "error" | null>(null)
+  const [messageType, setMessageType] = useState<"success" | "error" | "warning" | null>(null)
   const [employeeInfo, setEmployeeInfo] = useState<{
     name: string
     email: string
     employeeCode: string
   } | null>(null)
   const [attendanceType, setAttendanceType] = useState<"checkin" | "checkout">("checkin")
+  const [currentTime, setCurrentTime] = useState<Date>(new Date())
+  const [statusDisplay, setStatusDisplay] = useState<"ontime" | "latewindow" | "late" | null>(null)
+
+  const CHECKIN_TIME = 10 * 60
+  const CHECKOUT_TIME = 18 * 60 + 30
+  const GRACE_PERIOD = 15
+
+  const getAttendanceStatus = () => {
+    const now = new Date()
+    const minutes = now.getHours() * 60 + now.getMinutes()
+
+    if (attendanceType === "checkin") {
+      if (minutes <= CHECKIN_TIME) return "ontime"
+      if (minutes <= CHECKIN_TIME + GRACE_PERIOD) return "latewindow"
+      return "late"
+    } else {
+      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD) return "ontime"
+      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD * 2) return "latewindow"
+      return "late"
+    }
+  }
 
   useEffect(() => {
     const tokenParam = searchParams.get("token")
@@ -29,6 +50,15 @@ function CheckinContent() {
       console.log("[Init] QR token received from URL")
     }
   }, [searchParams])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+      setStatusDisplay(getAttendanceStatus())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [attendanceType])
 
   const handleSubmitAttendance = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,9 +76,23 @@ function CheckinContent() {
       return
     }
 
+    const currentStatus = getAttendanceStatus()
+    if (currentStatus === "late") {
+      setMessage(
+        attendanceType === "checkin" ? "You are late for check-in" : "You are late for check-out"
+      )
+      setMessageType("error")
+      return
+    } else if (currentStatus === "latewindow") {
+      setMessage(
+        attendanceType === "checkin"
+          ? "You are in the late window (15 min grace period)"
+          : "You are in the late window (30 min grace period)"
+      )
+      setMessageType("warning")
+    }
+
     setLoading(true)
-    setMessage("")
-    setMessageType(null)
 
     try {
       console.log("[Submit] Getting location...")
@@ -135,14 +179,47 @@ function CheckinContent() {
           <p className="text-gray-600 mt-2">Enter your employee code</p>
         </div>
 
+        <div className="mb-6 p-4 rounded-lg bg-slate-50 border border-slate-200">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-semibold text-gray-700">Current Time</span>
+            <span className="text-lg font-mono font-bold text-gray-900">
+              {currentTime.toLocaleTimeString()}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-700">Status</span>
+            <span
+              className={`text-sm font-bold px-3 py-1 rounded-full ${
+                statusDisplay === "ontime"
+                  ? "bg-green-100 text-green-800"
+                  : statusDisplay === "latewindow"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
+              }`}
+            >
+              {statusDisplay === "ontime"
+                ? "On Time"
+                : statusDisplay === "latewindow"
+                  ? "Late Window"
+                  : "Late"}
+            </span>
+          </div>
+        </div>
+
         {messageType && (
           <div
             className={`flex gap-3 rounded-lg p-4 mb-6 ${
-              messageType === "success" ? "bg-green-50 text-green-900" : "bg-red-50 text-red-900"
+              messageType === "success"
+                ? "bg-green-50 text-green-900"
+                : messageType === "warning"
+                  ? "bg-yellow-50 text-yellow-900"
+                  : "bg-red-50 text-red-900"
             }`}
           >
             {messageType === "success" ? (
               <CheckCircle className="h-5 w-5 flex-shrink-0" />
+            ) : messageType === "warning" ? (
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
             ) : (
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
             )}
