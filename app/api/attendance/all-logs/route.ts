@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db-wrapper"
 import { verifyToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 
@@ -20,48 +19,53 @@ export async function GET(req: NextRequest) {
     const month = searchParams.get("month")
     const year = searchParams.get("year")
 
-    let whereClause: any = {}
+    let dateFilter: any = {}
 
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
       const endDate = new Date(parseInt(year), parseInt(month), 0)
       endDate.setHours(23, 59, 59, 999)
 
-      whereClause.checkInTime = {
-        gte: startDate,
-        lte: endDate,
+      dateFilter = {
+        $gte: startDate,
+        $lte: endDate,
       }
     } else {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      whereClause.checkInTime = {
-        gte: today,
+      dateFilter = {
+        $gte: today,
       }
     }
 
-    const attendanceLogs = await prisma.attendanceLog.findMany({
-      where: whereClause,
-      orderBy: {
-        checkInTime: "desc",
-      },
-    })
+    const [attendanceCollection, employeeCollection] = await Promise.all([
+      db.attendanceLogs(),
+      db.employeeProfiles(),
+    ])
 
-    const employeeCollection = await db.employeeProfiles()
+    const attendanceLogs = await attendanceCollection
+      .find({ checkInTime: dateFilter })
+      .sort({ checkInTime: -1 })
+      .toArray()
 
     const formattedLogs = await Promise.all(
       attendanceLogs.map(async (log) => {
-        const employee = await employeeCollection.findOne({ _id: log.employeeId })
+        const employee = await employeeCollection.findOne({ employeeCode: log.employeeCode })
+        const status = log.checkOutTime ? "CHECKED OUT" : "CHECKED IN"
+        
         return {
-          id: log.id,
-          employeeId: log.employeeId,
+          id: log._id.toString(),
+          employeeCode: log.employeeCode,
           employeeName: employee?.name || "Unknown",
           checkInTime: log.checkInTime,
           checkOutTime: log.checkOutTime,
-          status: log.status,
+          status: status,
           latitude: log.latitude,
           longitude: log.longitude,
-          checkInFormatted: new Date(log.checkInTime).toLocaleString(),
-          checkOutFormatted: log.checkOutTime ? new Date(log.checkOutTime).toLocaleString() : null,
+          checkInFormatted: new Date(log.checkInTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+          checkOutFormatted: log.checkOutTime 
+            ? new Date(log.checkOutTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+            : "Not checked out",
         }
       })
     )

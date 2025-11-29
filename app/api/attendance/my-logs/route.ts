@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db-wrapper"
 import { verifyToken } from "@/lib/auth"
-import { z } from "zod"
+import { db } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,39 +19,48 @@ export async function GET(req: NextRequest) {
     const month = searchParams.get("month")
     const year = searchParams.get("year")
 
-    let whereClause: any = {
-      userId: payload.id,
-    }
+    let dateFilter: any = {}
 
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
       const endDate = new Date(parseInt(year), parseInt(month), 0)
       endDate.setHours(23, 59, 59, 999)
 
-      whereClause.checkInTime = {
-        gte: startDate,
-        lte: endDate,
+      dateFilter = {
+        $gte: startDate,
+        $lte: endDate,
       }
     }
 
-    const attendanceLogs = await prisma.attendanceLog.findMany({
-      where: whereClause,
-      orderBy: {
-        checkInTime: "desc",
-      },
-    })
+    const attendanceCollection = await db.attendanceLogs()
 
-    const formattedLogs = attendanceLogs.map((log) => ({
-      id: log.id,
-      checkInTime: log.checkInTime,
-      checkOutTime: log.checkOutTime,
-      status: log.status,
-      latitude: log.latitude,
-      longitude: log.longitude,
-      deviceId: log.deviceId,
-      checkInFormatted: new Date(log.checkInTime).toLocaleString(),
-      checkOutFormatted: log.checkOutTime ? new Date(log.checkOutTime).toLocaleString() : null,
-    }))
+    const query: any = { userId: payload.id }
+    if (Object.keys(dateFilter).length > 0) {
+      query.checkInTime = dateFilter
+    }
+
+    const attendanceLogs = await attendanceCollection
+      .find(query)
+      .sort({ checkInTime: -1 })
+      .toArray()
+
+    const formattedLogs = attendanceLogs.map((log) => {
+      const status = log.checkOutTime ? "CHECKED OUT" : "CHECKED IN"
+      
+      return {
+        id: log._id.toString(),
+        checkInTime: log.checkInTime,
+        checkOutTime: log.checkOutTime,
+        status: status,
+        latitude: log.latitude,
+        longitude: log.longitude,
+        deviceId: log.deviceId,
+        checkInFormatted: new Date(log.checkInTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        checkOutFormatted: log.checkOutTime 
+          ? new Date(log.checkOutTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          : "Not checked out",
+      }
+    })
 
     return NextResponse.json({ attendanceLogs: formattedLogs }, { status: 200 })
   } catch (error) {

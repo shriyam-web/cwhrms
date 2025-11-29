@@ -163,7 +163,7 @@ export default function AttendancePage() {
                     <DataTableCell>
                       <StatusBadge 
                         status={log.status} 
-                        variant={log.status === "PRESENT" ? "success" : "warning"}
+                        variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
                       />
                     </DataTableCell>
                   </DataTableRow>
