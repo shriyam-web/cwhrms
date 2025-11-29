@@ -20,6 +20,28 @@ interface AttendanceLog {
   arrivalStatus: string
   checkInTime?: string
   checkOutTime?: string | null
+  departureStatus?: string
+}
+
+const getCheckoutStatus = (checkOut?: string | null): "early" | "ontime" | "late" => {
+  if (!checkOut) return "early"
+  
+  try {
+    const checkOutDate = new Date(checkOut)
+    const ist = new Date(checkOutDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+    const hours = ist.getHours()
+    const minutes = ist.getMinutes()
+    const totalMinutes = hours * 60 + minutes
+    
+    const CHECKOUT_EARLY_TIME = 18 * 60 + 25
+    const CHECKOUT_TIME = 18 * 60 + 30
+    
+    if (totalMinutes < CHECKOUT_EARLY_TIME) return "early"
+    if (totalMinutes <= CHECKOUT_TIME) return "ontime"
+    return "late"
+  } catch {
+    return "early"
+  }
 }
 
 const calculateTotalHours = (checkIn?: string, checkOut?: string | null): string => {
@@ -190,8 +212,26 @@ export default function AttendancePage() {
                     </DataTableCell>
                     <DataTableCell>
                       <div className="flex items-center gap-2">
-                        <LogOut className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                        <span>{log.checkOutFormatted || "Not checked out"}</span>
+                        <LogOut className={`h-4 w-4 ${
+                          log.checkOutTime
+                            ? getCheckoutStatus(log.checkOutTime) === "early"
+                              ? "text-red-600"
+                              : getCheckoutStatus(log.checkOutTime) === "ontime"
+                                ? "text-green-600"
+                                : "text-blue-600"
+                            : "text-slate-600 dark:text-slate-400"
+                        }`} />
+                        <span className={`px-2 py-1 rounded text-sm font-medium ${
+                          log.checkOutTime
+                            ? getCheckoutStatus(log.checkOutTime) === "early"
+                              ? "bg-red-100 text-red-800"
+                              : getCheckoutStatus(log.checkOutTime) === "ontime"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-blue-100 text-blue-800"
+                            : ""
+                        }`}>
+                          {log.checkOutFormatted || "Not checked out"}
+                        </span>
                       </div>
                     </DataTableCell>
                     <DataTableCell>
