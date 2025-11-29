@@ -53,6 +53,19 @@ export async function GET(req: NextRequest) {
         const employee = await employeeCollection.findOne({ employeeCode: log.employeeCode })
         const status = log.checkOutTime ? "CHECKED OUT" : "CHECKED IN"
         
+        const checkInLocal = new Date(log.checkInTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+        const checkInHour = checkInLocal.getHours()
+        const checkInMinutes = checkInLocal.getMinutes()
+        const checkInTimeMinutes = checkInHour * 60 + checkInMinutes
+        const officeStartMinutes = 10 * 60
+        
+        let arrivalStatus = "ON TIME"
+        if (checkInTimeMinutes < officeStartMinutes) {
+          arrivalStatus = "EARLY"
+        } else if (checkInTimeMinutes > officeStartMinutes) {
+          arrivalStatus = "LATE"
+        }
+        
         return {
           id: log._id.toString(),
           employeeCode: log.employeeCode,
@@ -60,6 +73,7 @@ export async function GET(req: NextRequest) {
           checkInTime: log.checkInTime,
           checkOutTime: log.checkOutTime,
           status: status,
+          arrivalStatus: arrivalStatus,
           latitude: log.latitude,
           longitude: log.longitude,
           checkInFormatted: log.checkInTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
