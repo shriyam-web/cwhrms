@@ -114,14 +114,30 @@ function CheckinContent() {
 
     try {
       const deviceId = `device-${Date.now()}`
-
-      const response = await apiClient.post("/api/attendance/check-in-public", {
+      const payload = {
         encryptedToken: token,
         employeeCode: employeeCode.trim(),
         deviceId,
-        latitude,
-        longitude,
+        latitude: latitude || undefined,
+        longitude: longitude || undefined,
+      }
+
+      console.log("[Attendance] Submitting payload:", payload)
+
+      const response = await fetch("/api/attendance/check-in-public", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       })
+
+      const data = await response.json()
+      console.log("[Attendance] Response:", response.status, data)
+
+      if (!response.ok) {
+        throw new Error(data.error || `API returned ${response.status}`)
+      }
 
       setLoading(false)
       setStatus("idle")
@@ -130,7 +146,7 @@ function CheckinContent() {
       setLatitude(null)
       setLongitude(null)
       setToken(null)
-      setMessage(response.message || "Attendance marked successfully!")
+      setMessage(data.message || "Attendance marked successfully!")
       setMessageType("success")
 
       setTimeout(() => {

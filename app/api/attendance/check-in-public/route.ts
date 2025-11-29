@@ -38,13 +38,9 @@ export async function POST(req: NextRequest) {
     ])
 
     // Validate QR token
-    const qrToken = await qrTokensCollection.findOne({ token: decrypted })
+    let qrToken = await qrTokensCollection.findOne({ token: decrypted })
     if (!qrToken) {
       return NextResponse.json({ error: "QR code not found" }, { status: 404 })
-    }
-
-    if (qrToken.isUsed) {
-      return NextResponse.json({ error: "QR code already used" }, { status: 400 })
     }
 
     if (now > qrToken.expiresAt) {
@@ -69,11 +65,13 @@ export async function POST(req: NextRequest) {
       checkOutTime: null,
     })
 
-    // Mark QR as used immediately to prevent race conditions
-    await qrTokensCollection.updateOne(
-      { _id: qrToken._id },
-      { $set: { isUsed: true, usedAt: now } }
-    )
+    // Mark QR as used immediately to prevent race conditions (only if not already used)
+    if (!qrToken.isUsed) {
+      await qrTokensCollection.updateOne(
+        { _id: qrToken._id },
+        { $set: { isUsed: true, usedAt: now } }
+      )
+    }
 
     if (existingCheckIn) {
       // Check out
