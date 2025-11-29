@@ -24,6 +24,7 @@ function CheckinContent() {
   } | null>(null)
   const [latitude, setLatitude] = useState<number | null>(null)
   const [longitude, setLongitude] = useState<number | null>(null)
+  const submittedRef = useRef(false)
 
   useEffect(() => {
     const tokenParam = searchParams.get("token")
@@ -33,10 +34,11 @@ function CheckinContent() {
   }, [searchParams])
 
   useEffect(() => {
-    if (status === "submitting" && employeeInfo && token && !loading) {
+    if (status === "submitting" && employeeInfo && token && !loading && !submittedRef.current) {
+      submittedRef.current = true
       handleSubmitCheckIn()
     }
-  }, [status, employeeInfo, token, loading])
+  }, [status, employeeInfo, token])
 
   const handleVerifyEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,15 +116,19 @@ function CheckinContent() {
 
     try {
       const deviceId = `device-${Date.now()}`
-      const payload = {
+      const payload: any = {
         encryptedToken: token,
         employeeCode: employeeCode.trim(),
         deviceId,
-        latitude: latitude || undefined,
-        longitude: longitude || undefined,
       }
 
+      if (latitude !== null) payload.latitude = latitude
+      if (longitude !== null) payload.longitude = longitude
+
       console.log("[Attendance] Submitting payload:", payload)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
 
       const response = await fetch("/api/attendance/check-in-public", {
         method: "POST",
@@ -130,7 +136,10 @@ function CheckinContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       const data = await response.json()
       console.log("[Attendance] Response:", response.status, data)
@@ -146,6 +155,7 @@ function CheckinContent() {
       setLatitude(null)
       setLongitude(null)
       setToken(null)
+      submittedRef.current = false
       setMessage(data.message || "Attendance marked successfully!")
       setMessageType("success")
 
@@ -158,7 +168,9 @@ function CheckinContent() {
       setLoading(false)
       setStatus("idle")
       setEmployeeInfo(null)
-      console.error("[Attendance Error]", error)
+      submittedRef.current = false
+      console.error("[Attendance Error] Full error:", error)
+      console.error("[Attendance Error] Message:", error instanceof Error ? error.message : "Unknown error")
       setMessage(error instanceof Error ? error.message : "Check-in failed")
       setMessageType("error")
     }
@@ -170,6 +182,7 @@ function CheckinContent() {
     setLatitude(null)
     setLongitude(null)
     setStatus("idle")
+    submittedRef.current = false
   }
 
   return (

@@ -14,14 +14,16 @@ const checkInSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("[API] Check-in-public: Processing request")
     const body = await req.json()
     const { encryptedToken, employeeCode, deviceId, latitude, longitude } = checkInSchema.parse(body)
+    console.log("[API] Check-in-public: Payload validated")
 
-    // Decrypt token
     let decrypted: string
     try {
       decrypted = decryptToken(encryptedToken)
-    } catch {
+    } catch (e) {
+      console.error("[API] Decryption failed:", e)
       return NextResponse.json({ error: "Invalid QR code" }, { status: 400 })
     }
 
@@ -36,10 +38,11 @@ export async function POST(req: NextRequest) {
       db.employeeProfiles(),
       db.attendanceLogs(),
     ])
+    console.log("[API] Check-in-public: DB collections loaded")
 
-    // Validate QR token
-    let qrToken = await qrTokensCollection.findOne({ token: decrypted })
+    const qrToken = await qrTokensCollection.findOne({ token: decrypted })
     if (!qrToken) {
+      console.error("[API] QR token not found:", decrypted)
       return NextResponse.json({ error: "QR code not found" }, { status: 404 })
     }
 
@@ -47,15 +50,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "QR code expired" }, { status: 400 })
     }
 
-    // Get employee
     const employee = await employeeCollection.findOne({ employeeCode })
     if (!employee) {
+      console.error("[API] Employee not found:", employeeCode)
       return NextResponse.json({ error: "Employee not found" }, { status: 404 })
     }
 
     const employeeId = employee._id.toString()
 
-    // Check if already checked in today
     const existingCheckIn = await attendanceCollection.findOne({
       employeeId,
       checkInTime: {
@@ -65,7 +67,6 @@ export async function POST(req: NextRequest) {
       checkOutTime: null,
     })
 
-    // Mark QR as used immediately to prevent race conditions (only if not already used)
     if (!qrToken.isUsed) {
       await qrTokensCollection.updateOne(
         { _id: qrToken._id },
@@ -74,11 +75,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (existingCheckIn) {
-      // Check out
-      const updateResult = await attendanceCollection.updateOne(
+      await attendanceCollection.updateOne(
         { _id: existingCheckIn._id },
         { $set: { checkOutTime: now } }
       )
+      console.log("[API] Check-out recorded for:", employeeCode)
 
       return NextResponse.json(
         {
@@ -91,7 +92,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check in
     const insertResult = await attendanceCollection.insertOne({
       employeeId,
       userId: employee.userId,
@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     })
+    console.log("[API] Check-in recorded for:", employeeCode, "ID:", insertResult.insertedId)
 
     return NextResponse.json(
       {
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
     )
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("[API] Validation error:", error.errors[0].message)
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 })
     }
     console.error("[Public Check-in Error]", error)
