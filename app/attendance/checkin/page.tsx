@@ -1,20 +1,18 @@
 "use client"
 
-import { useEffect, useState, Suspense, useRef } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiClient } from "@/lib/api-client"
-import { AlertCircle, CheckCircle, Loader, MapPin, Clock } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader, Clock } from "lucide-react"
 
 function CheckinContent() {
   const searchParams = useSearchParams()
   const [token, setToken] = useState<string | null>(null)
   const [employeeCode, setEmployeeCode] = useState("")
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<"idle" | "verifying" | "gettingLocation" | "submitting">("idle")
   const [message, setMessage] = useState("")
   const [messageType, setMessageType] = useState<"success" | "error" | null>(null)
   const [employeeInfo, setEmployeeInfo] = useState<{
@@ -22,167 +20,107 @@ function CheckinContent() {
     email: string
     employeeCode: string
   } | null>(null)
-  const [latitude, setLatitude] = useState<number | null>(null)
-  const [longitude, setLongitude] = useState<number | null>(null)
-  const submittedRef = useRef(false)
 
   useEffect(() => {
     const tokenParam = searchParams.get("token")
     if (tokenParam) {
       setToken(tokenParam)
+      console.log("[Init] QR token received from URL")
     }
   }, [searchParams])
 
-  useEffect(() => {
-    if (status === "submitting" && employeeInfo && token && !loading && !submittedRef.current) {
-      submittedRef.current = true
-      handleSubmitCheckIn()
-    }
-  }, [status, employeeInfo, token])
-
-  const handleVerifyEmployee = async (e: React.FormEvent) => {
+  const handleSubmitAttendance = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[Submit] Starting attendance submission")
 
     if (!employeeCode.trim()) {
-      setMessage("Please enter employee code")
+      setMessage("Enter employee code")
       setMessageType("error")
       return
     }
 
     if (!token) {
-      setMessage("Invalid QR token")
+      setMessage("No QR token found")
       setMessageType("error")
       return
     }
 
     setLoading(true)
-    setStatus("verifying")
     setMessage("")
     setMessageType(null)
 
     try {
-      const verifyResponse = await apiClient.post("/api/employees/by-code", {
-        employeeCode: employeeCode.trim(),
-      })
+      console.log("[Submit] Getting location...")
+      let latitude = null
+      let longitude = null
 
-      if (!verifyResponse.employee) {
-        throw new Error("Employee not found")
+      if (navigator.geolocation) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              latitude = position.coords.latitude
+              longitude = position.coords.longitude
+              console.log("[Submit] Location obtained:", latitude, longitude)
+              resolve()
+            },
+            () => {
+              console.log("[Submit] Location permission denied, continuing without location")
+              resolve()
+            },
+            { timeout: 5000, enableHighAccuracy: false }
+          )
+        })
       }
 
-      setEmployeeInfo(verifyResponse.employee)
-      setStatus("gettingLocation")
-      getLocationAsync()
-    } catch (error) {
-      setLoading(false)
-      setStatus("idle")
-      setMessage(error instanceof Error ? error.message : "Failed to verify employee")
-      setMessageType("error")
-    }
-  }
-
-  const getLocationAsync = () => {
-    if (navigator.geolocation) {
-      const timeout = setTimeout(() => {
-        setStatus("submitting")
-      }, 10000)
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeout)
-          setLatitude(position.coords.latitude)
-          setLongitude(position.coords.longitude)
-          setStatus("submitting")
-        },
-        () => {
-          clearTimeout(timeout)
-          console.warn("Geolocation failed")
-          setStatus("submitting")
-        },
-        { timeout: 10000, enableHighAccuracy: false }
-      )
-    } else {
-      setStatus("submitting")
-    }
-  }
-
-  const handleSubmitCheckIn = async () => {
-    if (!token || !employeeInfo || !employeeCode) {
-      setMessage("Invalid request")
-      setMessageType("error")
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const deviceId = `device-${Date.now()}`
-      const payload: any = {
+      const payload = {
         encryptedToken: token,
         employeeCode: employeeCode.trim(),
-        deviceId,
-      }
+        deviceId: `device-${Date.now()}`,
+      } as any
 
       if (latitude !== null) payload.latitude = latitude
       if (longitude !== null) payload.longitude = longitude
 
-      console.log("[Attendance] Submitting payload:", payload)
-
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      console.log("[Submit] Sending to API:", payload)
 
       const response = await fetch("/api/attendance/check-in-public", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        signal: controller.signal,
       })
 
-      clearTimeout(timeoutId)
-
       const data = await response.json()
-      console.log("[Attendance] Response:", response.status, data)
+      console.log("[Submit] Response status:", response.status)
+      console.log("[Submit] Response data:", data)
 
       if (!response.ok) {
-        throw new Error(data.error || `API returned ${response.status}`)
+        throw new Error(data.error || "Check-in failed")
       }
 
       setLoading(false)
-      setStatus("idle")
+      setMessage(data.message || "Attendance recorded successfully!")
+      setMessageType("success")
       setEmployeeCode("")
       setEmployeeInfo(null)
-      setLatitude(null)
-      setLongitude(null)
       setToken(null)
-      submittedRef.current = false
-      setMessage(data.message || "Attendance marked successfully!")
-      setMessageType("success")
 
       setTimeout(() => {
-        setEmployeeCode("")
         setMessage("")
         setMessageType(null)
-      }, 2000)
+      }, 3000)
     } catch (error) {
+      console.error("[Submit] Error:", error)
       setLoading(false)
-      setStatus("idle")
-      setEmployeeInfo(null)
-      submittedRef.current = false
-      console.error("[Attendance Error] Full error:", error)
-      console.error("[Attendance Error] Message:", error instanceof Error ? error.message : "Unknown error")
-      setMessage(error instanceof Error ? error.message : "Check-in failed")
+      setMessage(error instanceof Error ? error.message : "Failed to record attendance")
       setMessageType("error")
     }
   }
 
-  const handleBack = () => {
-    setEmployeeInfo(null)
+  const handleReset = () => {
     setEmployeeCode("")
-    setLatitude(null)
-    setLongitude(null)
-    setStatus("idle")
-    submittedRef.current = false
+    setEmployeeInfo(null)
+    setMessage("")
+    setMessageType(null)
   }
 
   return (
@@ -208,101 +146,46 @@ function CheckinContent() {
           </div>
         )}
 
-        {!employeeInfo ? (
-          <form onSubmit={handleVerifyEmployee} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="employeeCode">Employee Code (e.g., CW/ABC-1234)</Label>
-              <Input
-                id="employeeCode"
-                placeholder="Enter your employee code"
-                value={employeeCode}
-                onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
-                disabled={loading}
-                className="text-center text-lg tracking-widest"
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading} size="lg">
-              {loading && status === "verifying" ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-          </form>
-        ) : (
-          <div className="space-y-6">
-            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-              <p className="text-sm text-blue-900">
-                <span className="font-semibold">Employee:</span> {employeeInfo.name}
-              </p>
-              <p className="text-sm text-blue-900 mt-1">
-                <span className="font-semibold">Code:</span> {employeeInfo.employeeCode}
-              </p>
-              <p className="text-sm text-blue-900 mt-1">
-                <span className="font-semibold">Email:</span> {employeeInfo.email}
-              </p>
-            </div>
-
-            {status === "gettingLocation" && (
-              <div className="flex items-center justify-center rounded-lg bg-yellow-50 border border-yellow-200 p-4">
-                <Loader className="mr-2 h-4 w-4 animate-spin text-yellow-600" />
-                <p className="text-sm text-yellow-900">Getting location...</p>
-              </div>
-            )}
-
-            {latitude !== null && longitude !== null && (
-              <div className="flex gap-2 rounded-lg bg-green-50 border border-green-200 p-4">
-                <MapPin className="h-4 w-4 text-green-600 flex-shrink-0 mt-1" />
-                <div className="text-sm text-green-900">
-                  <p className="font-semibold">Location Captured</p>
-                  <p className="text-xs mt-1">{latitude.toFixed(6)}, {longitude.toFixed(6)}</p>
-                </div>
-              </div>
-            )}
-
-            {latitude === null && longitude === null && status !== "gettingLocation" && (
-              <div className="flex gap-2 rounded-lg bg-amber-50 border border-amber-200 p-4">
-                <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-1" />
-                <p className="text-sm text-amber-900">
-                  <span className="font-semibold">Location unavailable</span> - Proceeding without location data
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleSubmitCheckIn}
-                disabled={loading || status === "gettingLocation" || status === "submitting"}
-              >
-                {loading && status === "submitting" ? (
-                  <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Clock className="mr-2 h-4 w-4" />
-                    Confirm Check-in
-                  </>
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleBack}
-                disabled={loading}
-              >
-                Back
-              </Button>
-            </div>
+        <form onSubmit={handleSubmitAttendance} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="employeeCode">Employee Code</Label>
+            <Input
+              id="employeeCode"
+              placeholder="e.g., CW/GNO-2707"
+              value={employeeCode}
+              onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
+              disabled={loading}
+              className="text-center text-lg tracking-widest"
+              autoFocus
+            />
           </div>
-        )}
+
+          <Button type="submit" className="w-full" disabled={loading} size="lg">
+            {loading ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Recording...
+              </>
+            ) : (
+              <>
+                <Clock className="mr-2 h-4 w-4" />
+                Mark Attendance
+              </>
+            )}
+          </Button>
+
+          {employeeCode && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleReset}
+              disabled={loading}
+            >
+              Clear
+            </Button>
+          )}
+        </form>
       </Card>
     </div>
   )
