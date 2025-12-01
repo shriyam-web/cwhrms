@@ -47,17 +47,42 @@ export async function GET(req: NextRequest) {
     const formattedLogs = attendanceLogs.map((log) => {
       const status = log.checkOutTime ? "CHECKED OUT" : "CHECKED IN"
       
-      const checkInLocal = new Date(log.checkInTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-      const checkInHour = checkInLocal.getHours()
-      const checkInMinutes = checkInLocal.getMinutes()
+      const checkInHour = log.checkInTime.getHours()
+      const checkInMinutes = log.checkInTime.getMinutes()
       const checkInTimeMinutes = checkInHour * 60 + checkInMinutes
       const officeStartMinutes = 10 * 60
+      const gracePeriod = 15
       
-      let arrivalStatus = "ON TIME"
+      let arrivalStatus = "APPRECIATED"
       if (checkInTimeMinutes < officeStartMinutes) {
-        arrivalStatus = "EARLY"
-      } else if (checkInTimeMinutes > officeStartMinutes) {
+        arrivalStatus = "APPRECIATED"
+      } else if (checkInTimeMinutes === officeStartMinutes) {
+        arrivalStatus = "ON TIME"
+      } else if (checkInTimeMinutes <= officeStartMinutes + gracePeriod) {
+        arrivalStatus = "GRACE"
+      } else {
         arrivalStatus = "LATE"
+      }
+
+      let departureStatus = "NOT CHECKED OUT"
+      if (log.checkOutTime) {
+        const checkOutHour = log.checkOutTime.getHours()
+        const checkOutMinutes = log.checkOutTime.getMinutes()
+        const checkOutTimeMinutes = checkOutHour * 60 + checkOutMinutes
+        
+        const CHECKOUT_EARLY_TIME = 18 * 60 + 15
+        const CHECKOUT_GRACE_TIME = 18 * 60 + 25
+        const CHECKOUT_ONTIME_TIME = 19 * 60
+        
+        if (checkOutTimeMinutes < CHECKOUT_EARLY_TIME) {
+          departureStatus = "EARLY"
+        } else if (checkOutTimeMinutes < CHECKOUT_GRACE_TIME) {
+          departureStatus = "GRACE"
+        } else if (checkOutTimeMinutes < CHECKOUT_ONTIME_TIME) {
+          departureStatus = "ON TIME"
+        } else {
+          departureStatus = "APPRECIATED"
+        }
       }
       
       return {
@@ -66,12 +91,14 @@ export async function GET(req: NextRequest) {
         checkOutTime: log.checkOutTime,
         status: status,
         arrivalStatus: arrivalStatus,
+        departureStatus: departureStatus,
+        dbStatus: log.status,
         latitude: log.latitude,
         longitude: log.longitude,
         deviceId: log.deviceId,
-        checkInFormatted: log.checkInTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        checkInFormatted: log.checkInTime.toLocaleString('en-IN'),
         checkOutFormatted: log.checkOutTime 
-          ? log.checkOutTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          ? log.checkOutTime.toLocaleString('en-IN')
           : "Not checked out",
       }
     })

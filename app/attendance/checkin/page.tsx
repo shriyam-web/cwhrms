@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, Loader, Clock } from "lucide-react"
+import { getISTNow } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 
 function CheckinContent() {
   const searchParams = useSearchParams()
@@ -23,24 +25,79 @@ function CheckinContent() {
   const [attendanceType, setAttendanceType] = useState<"checkin" | "checkout">("checkin")
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [statusDisplay, setStatusDisplay] = useState<"early" | "ontime" | "latewindow" | "late" | null>(null)
+  const [isHalfDay, setIsHalfDay] = useState(false)
+  const [todayCheckInTime, setTodayCheckInTime] = useState<Date | null>(null)
+  const [totalHours, setTotalHours] = useState<number>(0)
 
   const CHECKIN_TIME = 10 * 60
+  const HALF_DAY_THRESHOLD = 11 * 60
   const CHECKOUT_EARLY_TIME = 18 * 60 + 25
   const CHECKOUT_TIME = 18 * 60 + 30
   const GRACE_PERIOD = 15
 
   const getAttendanceStatus = () => {
     const now = new Date()
-    const minutes = now.getHours() * 60 + now.getMinutes()
+    const formatter = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    const parts = formatter.formatToParts(now)
+    const hours = Number(parts.find(p => p.type === 'hour')?.value || 0)
+    const mins = Number(parts.find(p => p.type === 'minute')?.value || 0)
+    const minutes = hours * 60 + mins
 
     if (attendanceType === "checkin") {
-      if (minutes <= CHECKIN_TIME) return "ontime"
+      if (minutes < CHECKIN_TIME) return "ontime"
       if (minutes <= CHECKIN_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
     } else {
       if (minutes < CHECKOUT_EARLY_TIME) return "early"
       if (minutes <= CHECKOUT_TIME) return "ontime"
+      if (minutes <= CHECKOUT_TIME + GRACE_PERIOD) return "latewindow"
       return "late"
+    }
+  }
+
+  const shouldShowHalfDayToggle = () => {
+    if (attendanceType !== "checkin") return false
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    const parts = formatter.formatToParts(now)
+    const hours = Number(parts.find(p => p.type === 'hour')?.value || 0)
+    const mins = Number(parts.find(p => p.type === 'minute')?.value || 0)
+    const minutes = hours * 60 + mins
+    return minutes >= HALF_DAY_THRESHOLD
+  }
+
+  const formatTotalHours = (hours: number) => {
+    const h = Math.floor(hours)
+    const m = Math.round((hours - h) * 60)
+    return `${h}h ${m}m`
+  }
+
+  const isLessThanRequired = () => {
+    return totalHours < 8.5
+  }
+
+  const fetchTodayCheckInTime = async () => {
+    try {
+      const response = await fetch("/api/attendance/today-checkin")
+      if (response.ok) {
+        const data = await response.json()
+        if (data.checkInTime) {
+          setTodayCheckInTime(new Date(data.checkInTime))
+          console.log("[Init] Today's check-in time fetched:", data.checkInTime)
+        }
+      }
+    } catch (error) {
+      console.error("[Init] Error fetching today's check-in time:", error)
     }
   }
 
@@ -50,6 +107,7 @@ function CheckinContent() {
       setToken(tokenParam)
       console.log("[Init] QR token received from URL")
     }
+    fetchTodayCheckInTime()
   }, [searchParams])
 
   useEffect(() => {
@@ -60,6 +118,14 @@ function CheckinContent() {
 
     return () => clearInterval(timer)
   }, [attendanceType])
+
+  useEffect(() => {
+    if (todayCheckInTime && attendanceType === "checkout") {
+      const timeDifference = currentTime.getTime() - todayCheckInTime.getTime()
+      const hours = timeDifference / (1000 * 60 * 60)
+      setTotalHours(hours)
+    }
+  }, [currentTime, todayCheckInTime, attendanceType])
 
   const handleSubmitAttendance = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,17 +183,19 @@ function CheckinContent() {
         })
       }
 
+      const istTime = getISTNow()
+
       const payload = {
         encryptedToken: token,
         employeeCode: employeeCode.trim(),
         deviceId: `device-${Date.now()}`,
-        clientTime: new Date().toISOString(),
-        timezoneOffset: new Date().getTimezoneOffset(),
+        checkTime: istTime.toISOString(),
         type: attendanceType,
       } as any
 
       if (latitude !== null) payload.latitude = latitude
       if (longitude !== null) payload.longitude = longitude
+      if (attendanceType === "checkin" && isHalfDay) payload.isHalfDay = true
 
       console.log("[Submit] Sending to API:", payload)
 
@@ -183,39 +251,46 @@ function CheckinContent() {
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-semibold text-gray-700">Current Time</span>
             <span className="text-lg font-mono font-bold text-gray-900">
-              {currentTime.toLocaleTimeString()}
+              {currentTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold text-gray-700">Status</span>
             <span
               className={`text-sm font-bold px-3 py-1 rounded-full ${
-                attendanceType === "checkin"
-                  ? statusDisplay === "ontime"
-                    ? "bg-green-100 text-green-800"
-                    : statusDisplay === "latewindow"
-                      ? "bg-yellow-100 text-yellow-800"
+                statusDisplay === "ontime"
+                  ? "bg-green-100 text-green-800"
+                  : statusDisplay === "latewindow"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : statusDisplay === "early"
+                      ? "bg-red-100 text-red-800"
                       : "bg-red-100 text-red-800"
-                  : statusDisplay === "early"
-                    ? "bg-red-100 text-red-800"
-                    : statusDisplay === "ontime"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
               }`}
             >
-              {attendanceType === "checkin"
-                ? statusDisplay === "ontime"
-                  ? "On Time"
-                  : statusDisplay === "latewindow"
-                    ? "Late Window"
-                    : "Late"
-                : statusDisplay === "early"
-                  ? "Too Early"
-                  : statusDisplay === "ontime"
-                    ? "On Time"
+              {statusDisplay === "ontime"
+                ? "On Time"
+                : statusDisplay === "latewindow"
+                  ? "Late Window"
+                  : statusDisplay === "early"
+                    ? "Too Early"
                     : "Late"}
             </span>
           </div>
+          
+          {attendanceType === "checkout" && todayCheckInTime && (
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-300">
+              <span className="text-sm font-semibold text-gray-700">Total Hours</span>
+              <span
+                className={`text-lg font-bold px-3 py-1 rounded-full ${
+                  isLessThanRequired()
+                    ? "bg-red-100 text-red-800"
+                    : "bg-green-100 text-green-800"
+                }`}
+              >
+                {formatTotalHours(totalHours)}
+              </span>
+            </div>
+          )}
         </div>
 
         {messageType && (
@@ -282,6 +357,23 @@ function CheckinContent() {
               autoFocus
             />
           </div>
+
+          {shouldShowHalfDayToggle() && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="halfDay"
+                  checked={isHalfDay}
+                  onCheckedChange={(checked) => setIsHalfDay(checked as boolean)}
+                  disabled={loading}
+                />
+                <label htmlFor="halfDay" className="flex-1 cursor-pointer text-sm">
+                  <span className="font-semibold text-blue-900">Mark as Half Day</span>
+                  <p className="text-xs text-blue-700 mt-1">You are checking in after 11:00 AM</p>
+                </label>
+              </div>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={loading} size="lg">
             {loading ? (

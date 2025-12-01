@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db-wrapper"
 import { verifyToken } from "@/lib/auth"
 import { decryptToken } from "@/lib/encryption"
 import { db } from "@/lib/db"
+import { getISTNow } from "@/lib/utils"
 import { z } from "zod"
 import { ObjectId } from "mongodb"
 
@@ -12,6 +13,7 @@ const checkInSchema = z.object({
   deviceId: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  isHalfDay: z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { encryptedToken, employeeCode, deviceId, latitude, longitude } = checkInSchema.parse(body)
+    const { encryptedToken, employeeCode, deviceId, latitude, longitude, isHalfDay } = checkInSchema.parse(body)
 
     // Decrypt and find QR token
     let decrypted: string
@@ -37,6 +39,8 @@ export async function POST(req: NextRequest) {
     } catch {
       return NextResponse.json({ error: "Invalid QR code" }, { status: 400 })
     }
+
+    const istNow = getISTNow()
 
     const qrToken = await prisma.qrToken.findUnique({
       where: { token: decrypted },
@@ -50,11 +54,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "QR code already used" }, { status: 400 })
     }
 
-    if (new Date() > qrToken.expiresAt) {
+    if (istNow > qrToken.expiresAt) {
       return NextResponse.json({ error: "QR code expired" }, { status: 400 })
     }
 
-    // Get employee by employee code
     const employeeCollection = await db.employeeProfiles()
     const employee = await employeeCollection.findOne({ employeeCode })
 
@@ -69,31 +72,31 @@ export async function POST(req: NextRequest) {
       email: employee.email,
     }
 
-    // Check if already checked in today
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const istDateString = istNow.toISOString().split('T')[0]
+    const todayIST = new Date(istDateString + "T00:00:00.000Z")
+    const tomorrowIST = new Date(todayIST)
+    tomorrowIST.setDate(tomorrowIST.getDate() + 1)
 
     const existingCheckIn = await prisma.attendanceLog.findFirst({
       where: {
         employeeId: employeeProfile.id,
         checkInTime: {
-          gte: today,
+          gte: todayIST,
+          lt: tomorrowIST,
         },
         checkOutTime: null,
       },
     })
 
     if (existingCheckIn) {
-      // Check out
       const checkOut = await prisma.attendanceLog.update({
         where: { id: existingCheckIn.id },
-        data: { checkOutTime: new Date() },
+        data: { checkOutTime: istNow },
       })
 
-      // Mark QR as used
       await prisma.qrToken.update({
         where: { id: qrToken.id },
-        data: { isUsed: true, usedAt: new Date() },
+        data: { isUsed: true, usedAt: istNow },
       })
 
       return NextResponse.json(
@@ -105,23 +108,39 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check in
+    const CHECKIN_TIME = 10 * 60
+    const GRACE_PERIOD = 15
+    
+    const hours = istNow.getHours()
+    const mins = istNow.getMinutes()
+    const minutes = hours * 60 + mins
+    
+    let status = "PRESENT"
+    if (isHalfDay) {
+      status = "HALF_DAY"
+    } else if (minutes < CHECKIN_TIME) {
+      status = "PRESENT"
+    } else if (minutes <= CHECKIN_TIME + GRACE_PERIOD) {
+      status = "PRESENT_GRACE"
+    } else {
+      status = "PRESENT_LATE"
+    }
+
     const checkIn = await prisma.attendanceLog.create({
       data: {
         employeeId: employeeProfile.id,
         userId: employeeProfile.userId,
-        checkInTime: new Date(),
-        status: "PRESENT",
+        checkInTime: istNow,
+        status,
         deviceId,
         latitude,
         longitude,
       },
     })
 
-    // Mark QR as used
     await prisma.qrToken.update({
       where: { id: qrToken.id },
-      data: { isUsed: true, usedAt: new Date() },
+      data: { isUsed: true, usedAt: istNow },
     })
 
     return NextResponse.json(

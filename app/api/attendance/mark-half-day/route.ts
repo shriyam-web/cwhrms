@@ -1,0 +1,57 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { verifyToken } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { ObjectId } from "mongodb"
+import { z } from "zod"
+
+const markHalfDaySchema = z.object({
+  attendanceId: z.string().min(1, "Attendance ID is required"),
+})
+
+export async function POST(req: NextRequest) {
+  try {
+    const authHeader = req.headers.get("Authorization")
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const token = authHeader.slice(7)
+    const payload = verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const body = await req.json()
+    const { attendanceId } = markHalfDaySchema.parse(body)
+
+    const attendanceCollection = await db.attendanceLogs()
+
+    const objectId = ObjectId.isValid(attendanceId) ? new ObjectId(attendanceId) : attendanceId
+
+    const result = await attendanceCollection.updateOne(
+      { _id: objectId },
+      { 
+        $set: { 
+          status: "HALF_DAY",
+          updatedAt: new Date(),
+          markedHalfDayBy: payload.id,
+        } 
+      }
+    )
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: "Attendance record not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(
+      { message: "Marked as half-day successfully" },
+      { status: 200 }
+    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0].message }, { status: 400 })
+    }
+    console.error("[Mark Half Day Error]", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

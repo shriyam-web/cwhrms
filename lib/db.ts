@@ -73,6 +73,10 @@ export const db = {
     const database = await getDatabase()
     return database.collection("qrTokens")
   },
+  async holidays() {
+    const database = await getDatabase()
+    return database.collection("holidays")
+  },
 }
 
 
