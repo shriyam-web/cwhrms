@@ -261,11 +261,17 @@ function CheckinContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-md border-0">
-        <div className="bg-slate-800 text-white px-6 py-5">
-          <h1 className="text-3xl font-bold">Mark Attendance</h1>
-          <p className="text-slate-300 text-sm mt-1">Scan QR or enter code</p>
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6">
+          <p className="text-slate-600 text-sm font-semibold tracking-wide">CITYWITTY</p>
+          <h2 className="text-slate-700 text-base mt-1">Attendance Management System</h2>
         </div>
+        
+        <Card className="w-full shadow-md border-0">
+          <div className="bg-slate-800 text-white px-6 py-5">
+            <h1 className="text-3xl font-bold">Mark Attendance</h1>
+            <p className="text-slate-300 text-sm mt-1">Scan QR or enter code</p>
+          </div>
 
         <div className="p-6 space-y-4">
           {messageType && (
@@ -401,7 +407,8 @@ function CheckinContent() {
             )}
           </form>
         </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }
