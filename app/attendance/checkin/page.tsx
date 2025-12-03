@@ -225,6 +225,18 @@ function CheckinContent() {
     setMessageType(null)
   }
 
+  const handleScanAnother = () => {
+    setEmployeeCode("")
+    setEmployeeInfo(null)
+    setToken(null)
+    setMessage("")
+    setMessageType(null)
+    
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }
+
   const getStatusColor = (color: string) => {
     switch (color) {
       case "purple":
@@ -241,6 +253,8 @@ function CheckinContent() {
         return "from-slate-50 to-gray-50 border-slate-200 text-slate-900"
     }
   }
+
+  
 
   const getStatusBgColor = (color: string) => {
     switch (color) {
@@ -389,7 +403,19 @@ function CheckinContent() {
               )}
             </Button>
 
-            {employeeCode && (
+            {messageType === "success" && (
+              <Button
+                type="button"
+                className="w-full py-2 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleScanAnother}
+                disabled={loading}
+              >
+                <Zap className="mr-2 h-4 w-4" />
+                Scan Another QR
+              </Button>
+            )}
+
+            {employeeCode && messageType !== "success" && (
               <Button
                 type="button"
                 variant="outline"
