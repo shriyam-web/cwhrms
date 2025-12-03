@@ -532,10 +532,6 @@ export default function AttendancePage() {
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage and track employee attendance</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={fetchAttendance} disabled={dataLoading} className="gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">
-              <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
             <Button onClick={() => setManualMarkModal({ isOpen: true, employeeCode: "", employeeName: "", checkInTime: getISTDatetimeLocal(), checkOutTime: "" })} className="gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium shadow-sm">
               <CheckCircle className="h-4 w-4" />
               Mark Attendance
@@ -691,6 +687,10 @@ export default function AttendancePage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select Date</h3>
+              <Button onClick={fetchAttendance} disabled={dataLoading} className="gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-medium h-auto py-1.5 px-3">
+                <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
+                Refresh Table
+              </Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {getUniqueDates().map(dateStr => (
