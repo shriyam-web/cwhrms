@@ -261,16 +261,16 @@ function CheckinContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl border-0">
-        <div className="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-8 py-6 rounded-t-lg">
-          <h1 className="text-4xl font-bold">Mark Attendance</h1>
-          <p className="text-blue-200 mt-1">Scan QR or enter your employee code</p>
+      <Card className="w-full max-w-md shadow-2xl border-0">
+        <div className="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-6 py-5 rounded-t-lg">
+          <h1 className="text-3xl font-bold">Mark Attendance</h1>
+          <p className="text-blue-200 text-sm mt-1">Scan QR or enter code</p>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-6 space-y-5">
           {messageType && (
             <div
-              className={`flex gap-3 rounded-lg p-4 ${
+              className={`flex gap-3 rounded-lg p-3 text-sm ${
                 messageType === "success"
                   ? "bg-green-50 border border-green-200 text-green-900"
                   : messageType === "warning"
@@ -279,84 +279,34 @@ function CheckinContent() {
               }`}
             >
               {messageType === "success" ? (
-                <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
               )}
-              <p className="text-sm">{message}</p>
+              <p>{message}</p>
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className={`bg-gradient-to-br ${getStatusColor(statusDisplay?.color || "blue")} border rounded-lg p-4`}>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium opacity-75">Current Time (IST)</span>
-                  <span className="text-2xl font-mono font-bold">
-                    {currentTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-current border-opacity-20">
-                  <span className="text-sm font-medium opacity-75">Status</span>
-                  <span className={`text-base font-bold px-3 py-1 rounded-full ${getStatusBgColor(statusDisplay?.color || "blue")}`}>
-                    {statusDisplay?.label || "Loading..."}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-4">
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 mb-3">
-                  {attendanceType === "checkin" ? "📋 Check-In Guidelines" : "🎯 Check-Out Guidelines"}
-                </h3>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {attendanceType === "checkin" ? (
-                    <>
-                      <div className="bg-purple-100 p-2 rounded border border-purple-200">
-                        <p className="font-medium text-purple-800">🌟 Before 10 AM</p>
-                        <p className="text-purple-700 mt-1">Appreciated</p>
-                      </div>
-                      <div className="bg-amber-100 p-2 rounded border border-amber-200">
-                        <p className="font-medium text-amber-800">⏰ 10:00-10:15</p>
-                        <p className="text-amber-700 mt-1">Grace Period</p>
-                      </div>
-                      <div className="bg-red-100 p-2 rounded border border-red-200 col-span-2">
-                        <p className="font-medium text-red-800">⚠️ After 10:15 AM</p>
-                        <p className="text-red-700 mt-1">Late</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="bg-red-100 p-2 rounded border border-red-200">
-                        <p className="font-medium text-red-800">⚠️ Before 6:15</p>
-                        <p className="text-red-700 mt-1">Incomplete</p>
-                      </div>
-                      <div className="bg-amber-100 p-2 rounded border border-amber-200">
-                        <p className="font-medium text-amber-800">⏰ 6:15-6:25</p>
-                        <p className="text-amber-700 mt-1">Grace</p>
-                      </div>
-                      <div className="bg-green-100 p-2 rounded border border-green-200">
-                        <p className="font-medium text-green-800">✓ 6:25-7:00</p>
-                        <p className="text-green-700 mt-1">Standard</p>
-                      </div>
-                      <div className="bg-purple-100 p-2 rounded border border-purple-200">
-                        <p className="font-medium text-purple-800">⭐ After 7:00</p>
-                        <p className="text-purple-700 mt-1">Extra Effort!</p>
-                      </div>
-                    </>
-                  )}
-                </div>
+          <div className={`bg-gradient-to-br ${getStatusColor(statusDisplay?.color || "blue")} border rounded-lg p-4`}>
+            <div className="space-y-2">
+              <p className="text-xs font-medium opacity-70">Current Time</p>
+              <p className="text-3xl font-mono font-bold">
+                {currentTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
+              </p>
+              <div className="pt-2 border-t border-current border-opacity-20">
+                <p className={`text-sm font-bold px-3 py-1 rounded-full inline-block ${getStatusBgColor(statusDisplay?.color || "blue")}`}>
+                  {statusDisplay?.label || "Loading..."}
+                </p>
               </div>
             </div>
           </div>
 
           {attendanceType === "checkout" && todayCheckInTime && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-blue-900">Total Hours</span>
                 <span
-                  className={`text-xl font-bold px-4 py-2 rounded-lg ${
+                  className={`text-base font-bold px-3 py-1 rounded ${
                     isLessThanRequired()
                       ? "bg-red-100 text-red-800"
                       : "bg-green-100 text-green-800"
@@ -368,55 +318,54 @@ function CheckinContent() {
             </div>
           )}
 
-          <form onSubmit={handleSubmitAttendance} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">Attendance Type</Label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceType("checkin")}
-                    disabled={loading}
-                    className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      attendanceType === "checkin"
-                        ? "bg-green-600 text-white shadow-lg"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    <Clock className="h-4 w-4 inline mr-2" />
-                    Check In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceType("checkout")}
-                    disabled={loading}
-                    className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                      attendanceType === "checkout"
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    <LogOut className="h-4 w-4 inline mr-2" />
-                    Check Out
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employeeCode" className="text-base font-semibold">Employee Code *</Label>
-                <Input
-                  id="employeeCode"
-                  placeholder="e.g., CW/XXX-DDMM"
-                  value={employeeCode}
-                  onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
-                  disabled={loading}
-                  className="text-center text-lg tracking-widest font-mono font-bold"
-                  autoFocus
-                />
-              </div>
+          <form onSubmit={handleSubmitAttendance} className="space-y-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAttendanceType("checkin")}
+                disabled={loading}
+                className={`flex-1 py-2 px-2 rounded-lg font-medium text-sm transition-all ${
+                  attendanceType === "checkin"
+                    ? "bg-green-600 text-white shadow"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                }`}
+              >
+                <Clock className="h-4 w-4 inline mr-1" />
+                Check In
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttendanceType("checkout")}
+                disabled={loading}
+                className={`flex-1 py-2 px-2 rounded-lg font-medium text-sm transition-all ${
+                  attendanceType === "checkout"
+                    ? "bg-blue-600 text-white shadow"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                }`}
+              >
+                <LogOut className="h-4 w-4 inline mr-1" />
+                Check Out
+              </button>
             </div>
 
-            <Button type="submit" className="w-full py-3 text-lg font-semibold" disabled={loading} size="lg">
+            <div className="space-y-1">
+              <Label htmlFor="employeeCode" className="text-xs font-semibold">Employee Code</Label>
+              <Input
+                id="employeeCode"
+                placeholder="CW/XXX-DDMM"
+                value={employeeCode}
+                onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
+                disabled={loading}
+                className="text-center text-lg tracking-widest font-mono font-bold"
+                autoFocus
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full py-2 text-base font-semibold" 
+              disabled={loading} 
+            >
               {loading ? (
                 <>
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -427,12 +376,12 @@ function CheckinContent() {
                   {attendanceType === "checkin" ? (
                     <>
                       <Clock className="mr-2 h-4 w-4" />
-                      Mark Check In
+                      Check In
                     </>
                   ) : (
                     <>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Mark Check Out
+                      Check Out
                     </>
                   )}
                 </>
@@ -443,7 +392,7 @@ function CheckinContent() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full text-sm"
                 onClick={handleReset}
                 disabled={loading}
               >
