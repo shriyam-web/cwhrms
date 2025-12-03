@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, Loader, Clock, LogOut, Zap } from "lucide-react"
 import { getISTNow } from "@/lib/utils"
+import jsQR from "jsqr"
 
 interface AttendanceStatus {
   status: "appreciated" | "ontime" | "grace" | "early" | "incomplete"
@@ -248,43 +249,34 @@ function CheckinContent() {
       
       document.body.appendChild(video)
       
-      const scanInterval = setInterval(async () => {
+      let isScanning = true
+      
+      const scanInterval = setInterval(() => {
         try {
-          if (!ctx || !video.videoWidth) return
+          if (!ctx || !video.videoWidth || !isScanning) return
           
           canvas.width = video.videoWidth
           canvas.height = video.videoHeight
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
           
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-          const data = imageData.data
+          const code = jsQR(imageData.data, imageData.width, imageData.height)
           
-          const response = await fetch("/api/scan-qr", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              imageData: Array.from(data),
-              width: canvas.width,
-              height: canvas.height
-            })
-          })
-          
-          if (response.ok) {
-            const result = await response.json()
-            if (result.token) {
-              clearInterval(scanInterval)
-              stream.getTracks().forEach(track => track.stop())
-              if (document.body.contains(video)) document.body.removeChild(video)
-              if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
-              
-              setToken(result.token)
-              setMessage("")
-              setMessageType(null)
-              setEmployeeCode("")
-              
-              if (typeof window !== "undefined") {
-                window.history.replaceState({}, document.title, `?token=${encodeURIComponent(result.token)}`)
-              }
+          if (code) {
+            isScanning = false
+            clearInterval(scanInterval)
+            stream.getTracks().forEach(track => track.stop())
+            if (document.body.contains(video)) document.body.removeChild(video)
+            if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
+            
+            const qrData = code.data
+            setToken(qrData)
+            setMessage("")
+            setMessageType(null)
+            setEmployeeCode("")
+            
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, document.title, `?token=${encodeURIComponent(qrData)}`)
             }
           }
         } catch (err) {
@@ -309,6 +301,7 @@ function CheckinContent() {
       closeButton.style.fontWeight = "bold"
       
       closeButton.onclick = () => {
+        isScanning = false
         clearInterval(scanInterval)
         stream.getTracks().forEach(track => track.stop())
         if (document.body.contains(video)) document.body.removeChild(video)
