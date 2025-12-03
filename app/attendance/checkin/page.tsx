@@ -225,15 +225,100 @@ function CheckinContent() {
     setMessageType(null)
   }
 
-  const handleScanAnother = () => {
-    setEmployeeCode("")
-    setEmployeeInfo(null)
-    setToken(null)
-    setMessage("")
-    setMessageType(null)
-    
-    if (typeof window !== "undefined") {
-      window.history.replaceState({}, document.title, window.location.pathname)
+  const handleScanAnother = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      })
+      
+      const video = document.createElement("video")
+      video.srcObject = stream
+      video.setAttribute("autoplay", "true")
+      video.setAttribute("playsinline", "true")
+      video.style.position = "fixed"
+      video.style.top = "0"
+      video.style.left = "0"
+      video.style.width = "100%"
+      video.style.height = "100%"
+      video.style.objectFit = "cover"
+      video.style.zIndex = "9999"
+      
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+      
+      document.body.appendChild(video)
+      
+      const scanInterval = setInterval(async () => {
+        try {
+          if (!ctx || !video.videoWidth) return
+          
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const data = imageData.data
+          
+          const response = await fetch("/api/scan-qr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              imageData: Array.from(data),
+              width: canvas.width,
+              height: canvas.height
+            })
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            if (result.token) {
+              clearInterval(scanInterval)
+              stream.getTracks().forEach(track => track.stop())
+              if (document.body.contains(video)) document.body.removeChild(video)
+              if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
+              
+              setToken(result.token)
+              setMessage("")
+              setMessageType(null)
+              setEmployeeCode("")
+              
+              if (typeof window !== "undefined") {
+                window.history.replaceState({}, document.title, `?token=${encodeURIComponent(result.token)}`)
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Scan error:", err)
+        }
+      }, 100)
+      
+      const closeButton = document.createElement("button")
+      closeButton.innerHTML = "✕"
+      closeButton.style.position = "fixed"
+      closeButton.style.top = "20px"
+      closeButton.style.right = "20px"
+      closeButton.style.width = "50px"
+      closeButton.style.height = "50px"
+      closeButton.style.fontSize = "28px"
+      closeButton.style.zIndex = "10000"
+      closeButton.style.backgroundColor = "rgba(0,0,0,0.7)"
+      closeButton.style.color = "white"
+      closeButton.style.border = "none"
+      closeButton.style.borderRadius = "50%"
+      closeButton.style.cursor = "pointer"
+      closeButton.style.fontWeight = "bold"
+      
+      closeButton.onclick = () => {
+        clearInterval(scanInterval)
+        stream.getTracks().forEach(track => track.stop())
+        if (document.body.contains(video)) document.body.removeChild(video)
+        if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
+      }
+      
+      document.body.appendChild(closeButton)
+    } catch (error) {
+      setMessage("Failed to access camera. Please ensure camera permissions are granted.")
+      setMessageType("error")
     }
   }
 
@@ -403,19 +488,17 @@ function CheckinContent() {
               )}
             </Button>
 
-            {messageType === "success" && (
-              <Button
-                type="button"
-                className="w-full py-2 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleScanAnother}
-                disabled={loading}
-              >
-                <Zap className="mr-2 h-4 w-4" />
-                Scan Another QR
-              </Button>
-            )}
+            <Button
+              type="button"
+              className="w-full py-2 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleScanAnother}
+              disabled={loading}
+            >
+              <Zap className="mr-2 h-4 w-4" />
+              Scan Another QR
+            </Button>
 
-            {employeeCode && messageType !== "success" && (
+            {employeeCode && (
               <Button
                 type="button"
                 variant="outline"
