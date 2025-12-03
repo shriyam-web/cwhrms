@@ -591,7 +591,6 @@ export default function AttendancePage() {
           </Card>
         )}
 
-        {!dataLoading && (
         <Card className="p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Filters</h3>
@@ -680,7 +679,6 @@ export default function AttendancePage() {
             </div>
           </div>
         </Card>
-        )}
 
         {attendanceLogs.length === 0 && !dataLoading && (
           <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
