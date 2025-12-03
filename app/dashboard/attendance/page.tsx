@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Clock, LogOut, AlertCircle, CheckCircle, Zap, Frown, MessageSquare, X, LogOutIcon, MapPin, User, Edit } from "lucide-react"
+import { QrCode, Clock, LogOut, AlertCircle, CheckCircle, Zap, Frown, MessageSquare, X, LogOutIcon, MapPin, User, Edit, RefreshCw, Loader2 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
@@ -532,6 +532,10 @@ export default function AttendancePage() {
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage and track employee attendance</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={fetchAttendance} disabled={dataLoading} className="gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">
+              <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
             <Button onClick={() => setManualMarkModal({ isOpen: true, employeeCode: "", employeeName: "", checkInTime: getISTDatetimeLocal(), checkOutTime: "" })} className="gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium shadow-sm">
               <CheckCircle className="h-4 w-4" />
               Mark Attendance
@@ -580,6 +584,14 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {dataLoading && (
+          <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-slate-600 dark:text-slate-400" />
+            <p className="text-slate-600 dark:text-slate-400 font-medium">Loading attendance data...</p>
+          </Card>
+        )}
+
+        {!dataLoading && (
         <Card className="p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Filters</h3>
@@ -668,6 +680,7 @@ export default function AttendancePage() {
             </div>
           </div>
         </Card>
+        )}
 
         {attendanceLogs.length === 0 && !dataLoading && (
           <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
