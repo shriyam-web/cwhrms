@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Clock, LogOut, AlertCircle, CheckCircle, Zap, Frown, MessageSquare, X, LogOutIcon, MapPin } from "lucide-react"
+import { QrCode, Clock, LogOut, AlertCircle, CheckCircle, Zap, Frown, MessageSquare, X, LogOutIcon, MapPin, User, Edit } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
@@ -27,10 +27,14 @@ interface AttendanceLog {
   checkOutTime?: string | null
   notes?: string
   isEligibleForHalfDay?: boolean
+  isHalfDay?: boolean
   markedByHR?: boolean
   latitude?: number
   longitude?: number
   markedByHRAt?: string | null
+  editedByHRId?: string
+  editedByHRName?: string
+  editedByHRAt?: string | null
 }
 
 
@@ -110,6 +114,17 @@ const getISTDatetimeLocal = (): string => {
   return `${year}-${month}-${date}T${hours}:${minutes}`
 }
 
+const convertUTCToISTDatetimeLocal = (utcDate: Date | string): string => {
+  const date = typeof utcDate === "string" ? new Date(utcDate) : utcDate
+  const istTime = new Date(date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
+  const year = istTime.getFullYear()
+  const month = String(istTime.getMonth() + 1).padStart(2, "0")
+  const dateStr = String(istTime.getDate()).padStart(2, "0")
+  const hours = String(istTime.getHours()).padStart(2, "0")
+  const minutes = String(istTime.getMinutes()).padStart(2, "0")
+  return `${year}-${month}-${dateStr}T${hours}:${minutes}`
+}
+
 export default function AttendancePage() {
   const router = useRouter()
   const { user, loading } = useAuth()
@@ -119,7 +134,6 @@ export default function AttendancePage() {
   const [year, setYear] = useState(new Date().getFullYear())
   const [notesModal, setNotesModal] = useState<{ id: string; notes: string } | null>(null)
   const [notesLoading, setNotesLoading] = useState(false)
-  const [halfDayLoading, setHalfDayLoading] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [forcedCheckoutModal, setForcedCheckoutModal] = useState<{ id: string; employeeName: string; checkoutTime: string } | null>(null)
   const [forcedCheckoutLoading, setForcedCheckoutLoading] = useState(false)
@@ -133,6 +147,12 @@ export default function AttendancePage() {
   const [holidays, setHolidays] = useState<number[]>([])
   const [showHolidayManager, setShowHolidayManager] = useState(false)
   const [holidayLoading, setHolidayLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [employeeDetailModal, setEmployeeDetailModal] = useState<{ employeeCode: string; employeeName: string } | null>(null)
+  const [editAttendanceModal, setEditAttendanceModal] = useState<{ id: string; employeeName: string; checkInTime: string; checkOutTime: string } | null>(null)
+  const [editAttendanceLoading, setEditAttendanceLoading] = useState(false)
+  const [halfDayModal, setHalfDayModal] = useState<{ id: string; employeeName: string; reason: string } | null>(null)
+  const [halfDayModalLoading, setHalfDayModalLoading] = useState(false)
 
   const fetchAttendance = async () => {
     setDataLoading(true)
@@ -231,23 +251,26 @@ export default function AttendancePage() {
     }
   }
 
-  const handleMarkHalfDay = async (attendanceId: string) => {
-    setHalfDayLoading(attendanceId)
+  const handleMarkHalfDay = async () => {
+    if (!halfDayModal) return
+    setHalfDayModalLoading(true)
     try {
       await apiClient.post("/api/attendance/mark-half-day", {
-        attendanceId,
+        attendanceId: halfDayModal.id,
+        reason: halfDayModal.reason,
       })
       setAttendanceLogs(prev =>
         prev.map(log =>
-          log.id === attendanceId
-            ? { ...log, status: "HALF_DAY", isEligibleForHalfDay: false }
+          log.id === halfDayModal.id
+            ? { ...log, isHalfDay: true, isEligibleForHalfDay: false }
             : log
         )
       )
+      setHalfDayModal(null)
     } catch (error) {
       console.error("Failed to mark half-day:", error)
     } finally {
-      setHalfDayLoading(null)
+      setHalfDayModalLoading(false)
     }
   }
 
@@ -275,6 +298,28 @@ export default function AttendancePage() {
     }
   }
 
+  const handleEditAttendance = async () => {
+    if (!editAttendanceModal) return
+    setEditAttendanceLoading(true)
+    try {
+      const checkInISO = convertToISTISO(editAttendanceModal.checkInTime)
+      const checkOutISO = editAttendanceModal.checkOutTime ? convertToISTISO(editAttendanceModal.checkOutTime) : null
+      
+      await apiClient.post("/api/attendance/edit-attendance", {
+        attendanceId: editAttendanceModal.id,
+        checkInTime: checkInISO,
+        checkOutTime: checkOutISO,
+      })
+      
+      fetchAttendance()
+      setEditAttendanceModal(null)
+    } catch (error) {
+      console.error("Failed to edit attendance:", error)
+    } finally {
+      setEditAttendanceLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!loading && user && user.role !== "HR") {
       router.push("/dashboard/my-attendance")
@@ -295,6 +340,18 @@ export default function AttendancePage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (attendanceLogs.length > 0 && !selectedDate) {
+      const today = new Date().toISOString().split('T')[0]
+      const uniqueDates = getUniqueDates()
+      if (uniqueDates.includes(today)) {
+        setSelectedDate(today)
+      } else if (uniqueDates.length > 0) {
+        setSelectedDate(uniqueDates[0])
+      }
+    }
+  }, [attendanceLogs])
 
   if (loading) {
     return (
@@ -321,6 +378,41 @@ export default function AttendancePage() {
     const hours = Math.floor(decimalHours)
     const minutes = Math.round((decimalHours - hours) * 60)
     return `${hours}h ${minutes}m`
+  }
+
+  const getUniqueDates = () => {
+    const dates = new Set<string>()
+    attendanceLogs.forEach(log => {
+      if (log.checkInTime) {
+        const date = new Date(log.checkInTime)
+        const dateStr = date.toISOString().split('T')[0]
+        dates.add(dateStr)
+      }
+    })
+    return Array.from(dates).sort().reverse()
+  }
+
+  const getLogsForDate = (dateStr: string) => {
+    return attendanceLogs.filter(log => {
+      if (!log.checkInTime) return false
+      const logDate = new Date(log.checkInTime).toISOString().split('T')[0]
+      return logDate === dateStr
+    })
+  }
+
+  const formatDateForDisplay = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00')
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    const todayStr = today.toISOString().split('T')[0]
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    
+    if (dateStr === todayStr) return 'Today'
+    if (dateStr === yesterdayStr) return 'Yesterday'
+    
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', weekday: 'short' })
   }
 
   const calculateStats = () => {
@@ -569,155 +661,218 @@ export default function AttendancePage() {
                 className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-600 transition-all"
               >
                 <option value="all">All Status</option>
-                <option value="CHECKED IN">Checked In</option>
-                <option value="CHECKED OUT">Checked Out</option>
-                <option value="HALF_DAY">Half Day</option>
+                <option value="CHECKED IN">Check in</option>
+                <option value="CHECKED OUT">Check out</option>
+                <option value="HALF_DAY">Half day</option>
               </select>
             </div>
           </div>
         </Card>
 
-        <Card className="p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm">
-          {attendanceLogs.length === 0 && !dataLoading && (
-            <div className="text-center py-8">
-              <Clock className="h-8 w-8 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
-              <p className="text-slate-500 dark:text-slate-400 text-sm">No attendance records found</p>
-            </div>
-          )}
+        {attendanceLogs.length === 0 && !dataLoading && (
+          <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+            <Clock className="h-12 w-12 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400">No attendance records found</p>
+          </Card>
+        )}
 
-          {attendanceLogs.length > 0 && (
-            <DataTable searchPlaceholder="Search attendance...">
-              <DataTableHead>
-                <DataTableHeader>Employee</DataTableHeader>
-                <DataTableHeader>Check In</DataTableHeader>
-                <DataTableHeader>Check Out</DataTableHeader>
-                <DataTableHeader>Hours</DataTableHeader>
-                <DataTableHeader>Status</DataTableHeader>
-                <DataTableHeader>Actions</DataTableHeader>
-              </DataTableHead>
-              <DataTableBody>
-                {filteredLogs.length > 0 ? filteredLogs.map((log) => {
-                  const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
-                  const meetsMinimum = hours.hours >= 8.5
-                  return (
-                    <DataTableRow key={log.id} className={log.markedByHR ? "bg-blue-50 dark:bg-blue-950/20" : ""}>
-                      <DataTableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col">
-                            <button
-                              onClick={() => setSelectedEmployee(log.employeeCode)}
-                              className="font-semibold text-slate-900 dark:text-white text-sm hover:text-blue-600 dark:hover:text-blue-400 hover:underline text-left transition-colors"
-                            >
-                              {log.employeeName}
-                            </button>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">{log.employeeCode}</span>
-                            {log.markedByHR && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 w-fit mt-0.5">
-                                <CheckCircle className="h-3 w-3" />
-                                HR Marked
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </DataTableCell>
-                      <DataTableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold w-fit ${log.arrivalStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
-                            log.arrivalStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
-                              log.arrivalStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" :
-                                "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                            }`}>
-                            {log.checkInFormatted}
-                          </span>
-                          {log.isEligibleForHalfDay && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleMarkHalfDay(log.id)}
-                              disabled={halfDayLoading === log.id}
-                              className="text-xs h-auto py-1 px-2 bg-slate-200 border border-slate-300 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-600 font-medium transition-all w-fit"
-                            >
-                              {halfDayLoading === log.id ? "..." : "Half-Day"}
-                            </Button>
-                          )}
-                        </div>
-                      </DataTableCell>
-                      <DataTableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${log.departureStatus === "EARLY" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
-                          log.departureStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" :
-                            log.departureStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
-                              log.departureStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
-                                "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          }`}>
-                          {log.checkOutFormatted || "Pending"}
-                        </span>
-                      </DataTableCell>
-                      <DataTableCell>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold px-2.5 py-1 rounded-full text-xs ${meetsMinimum
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                            }`}>
-                            {hours.formatted}
-                          </span>
-                        </div>
-                      </DataTableCell>
-                      <DataTableCell>
-                        <StatusBadge
-                          status={log.status}
-                          variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
-                        />
-                      </DataTableCell>
-                      <DataTableCell>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {log.latitude && log.longitude && !log.markedByHR && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                const mapsUrl = `https://www.google.com/maps?q=${log.latitude},${log.longitude}`
-                                window.open(mapsUrl, '_blank')
-                              }}
-                              className="gap-1.5 text-xs h-auto py-1 px-2 bg-blue-100 border border-blue-300 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50 font-medium transition-all"
-                            >
-                              <MapPin className="h-3 w-3" />
-                              Cordinates
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            onClick={() => setNotesModal({ id: log.id, notes: log.notes || "" })}
-                            className={`gap-1.5 text-xs h-auto py-1 px-2 font-medium transition-all ${log.notes ? "bg-slate-900 hover:bg-slate-800 dark:bg-white text-white dark:text-slate-900 dark:hover:bg-slate-100" : "bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"}`}
-                          >
-                            <MessageSquare className="h-3 w-3" />
-                            {log.notes ? "Edit" : "Add"}
-                          </Button>
-                          {log.status === "CHECKED IN" && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                const checkoutTime = getISTDatetimeLocal()
-                                setForcedCheckoutModal({ id: log.id, employeeName: log.employeeName, checkoutTime })
-                              }}
-                              className="gap-1.5 text-xs h-auto py-1 px-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-medium transition-all border border-slate-300 dark:border-slate-700"
-                            >
-                              <LogOut className="h-3 w-3" />
-                              Out
-                            </Button>
-                          )}
-                        </div>
-                      </DataTableCell>
-                    </DataTableRow>
+        {attendanceLogs.length > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select Date</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueDates().map(dateStr => (
+                <button
+                  key={dateStr}
+                  onClick={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedDate === dateStr
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {formatDateForDisplay(dateStr)}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-6">
+              {selectedDate ? (
+                (() => {
+                  const dateLogsFiltered = getLogsForDate(selectedDate).filter(log => {
+                    let pass = true
+                    if (selectedEmployee) pass = pass && log.employeeCode === selectedEmployee
+                    if (statusFilter !== "all") pass = pass && log.status === statusFilter
+                    return pass
+                  })
+                  return dateLogsFiltered.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-b border-slate-200 dark:border-slate-800">
+                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Employee</th>
+                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">In</th>
+                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Out</th>
+                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Hours</th>
+                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                            <th className="text-right py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {dateLogsFiltered.map(log => {
+                            const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
+                            const meetsMinimum = hours.hours >= 8.5
+                            return (
+                              <tr key={log.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors ${log.markedByHR ? "bg-blue-50/30 dark:bg-blue-950/15" : ""}`}>
+                                <td className="py-3 px-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => setEmployeeDetailModal({ employeeCode: log.employeeCode, employeeName: log.employeeName })}
+                                      className="text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                                    >
+                                      {log.employeeName}
+                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs text-slate-500 dark:text-slate-400">{log.employeeCode}</span>
+                                      {log.isHalfDay && (
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800/30">
+                                          <Clock className="h-2.5 w-2.5" />
+                                          Half Day
+                                        </span>
+                                      )}
+                                      {log.markedByHR && (
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30">
+                                          HR Marked
+                                        </span>
+                                      )}
+                                      {log.editedByHRAt && (
+                                        <span title={`Edited by ${log.editedByHRName} at ${formatTimeInIST(log.editedByHRAt)}`} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300 border border-green-200 dark:border-green-800/30">
+                                          <Edit className="h-2.5 w-2.5" />
+                                          Edited by HR
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${log.arrivalStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" :
+                                    log.arrivalStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
+                                      log.arrivalStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" :
+                                        "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                    }`}>
+                                    {log.checkInFormatted}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${log.departureStatus === "EARLY" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" :
+                                    log.departureStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" :
+                                      log.departureStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
+                                        log.departureStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" :
+                                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                    }`}>
+                                    {log.checkOutFormatted || "Pending"}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${meetsMinimum
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                    }`}>
+                                    {hours.formatted}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <StatusBadge
+                                    status={log.status}
+                                    variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
+                                  />
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex justify-end gap-1">
+                                    {log.isEligibleForHalfDay && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => setHalfDayModal({ id: log.id, employeeName: log.employeeName, reason: "" })}
+                                        disabled={halfDayModalLoading}
+                                        className="h-auto py-1.5 px-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-medium transition-all text-xs"
+                                        title="Mark as half day (HR action)"
+                                      >
+                                        Half Day
+                                      </Button>
+                                    )}
+                                    {log.latitude && log.longitude && !log.markedByHR && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          const mapsUrl = `https://www.google.com/maps?q=${log.latitude},${log.longitude}`
+                                          window.open(mapsUrl, '_blank')
+                                        }}
+                                        className="h-auto py-1.5 px-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 font-medium transition-all"
+                                        title="View location"
+                                      >
+                                        <MapPin className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => setNotesModal({ id: log.id, notes: log.notes || "" })}
+                                      className={`h-auto py-1.5 px-2 font-medium transition-all ${
+                                        log.notes
+                                          ? "bg-slate-900 hover:bg-slate-800 dark:bg-white text-white dark:text-slate-900 dark:hover:bg-slate-100"
+                                          : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+                                      }`}
+                                      title={log.notes ? "Edit notes" : "Add notes"}
+                                    >
+                                      <MessageSquare className="h-3 w-3" />
+                                    </Button>
+                                    {log.status === "CHECKED IN" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          const checkoutTime = getISTDatetimeLocal()
+                                          setForcedCheckoutModal({ id: log.id, employeeName: log.employeeName, checkoutTime })
+                                        }}
+                                        className="h-auto py-1.5 px-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-medium transition-all"
+                                        title="Checkout"
+                                      >
+                                        <LogOut className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        const checkInLocal = log.checkInTime ? convertUTCToISTDatetimeLocal(log.checkInTime) : getISTDatetimeLocal()
+                                        const checkOutLocal = log.checkOutTime ? convertUTCToISTDatetimeLocal(log.checkOutTime) : ""
+                                        setEditAttendanceModal({ id: log.id, employeeName: log.employeeName, checkInTime: checkInLocal, checkOutTime: checkOutLocal })
+                                      }}
+                                      className="h-auto py-1.5 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-medium transition-all"
+                                      title="Edit attendance times"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center">
+                      <p className="text-slate-600 dark:text-slate-400">No records found for this date</p>
+                    </Card>
                   )
-                }) : (
-                  <DataTableRow>
-                    <DataTableCell colSpan={6} className="text-center py-8">
-                      <p className="text-slate-500 dark:text-slate-400 text-sm">No records match the selected filters</p>
-                    </DataTableCell>
-                  </DataTableRow>
-                )}
-              </DataTableBody>
-            </DataTable>
-          )}
-        </Card>
+                })()
+              ) : (
+                <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center">
+                  <p className="text-slate-600 dark:text-slate-400">Select a date to view attendance</p>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8">
           <Accordion type="single" collapsible>
@@ -1116,7 +1271,7 @@ export default function AttendancePage() {
 
       {manualMarkModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+          <Card className="w-full max-w-3xl p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <CheckCircle className="h-4 w-4" />
@@ -1130,13 +1285,13 @@ export default function AttendancePage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                   Select Employee *
                 </label>
                 {employees.length === 0 ? (
-                  <div className="w-full px-3 py-2 border rounded-lg bg-slate-50 text-slate-500">
+                  <div className="w-full px-3 py-2 border rounded-lg bg-slate-50 dark:bg-slate-900/30 text-slate-500 dark:text-slate-400">
                     Loading employees...
                   </div>
                 ) : (
@@ -1152,7 +1307,7 @@ export default function AttendancePage() {
                         })
                       }
                     }}
-                    className="w-full px-3 py-2 border rounded-lg bg-white"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                   >
                     <option value="">-- Choose Employee --</option>
                     {employees.map((emp) => (
@@ -1166,7 +1321,7 @@ export default function AttendancePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                     Check-in Time (IST) *
                   </label>
                   <Input
@@ -1175,9 +1330,10 @@ export default function AttendancePage() {
                     onChange={(e) => setManualMarkModal({ ...manualMarkModal, checkInTime: e.target.value })}
                     className="w-full"
                   />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Standard: 10:00 AM</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                     Check-out Time (IST) - Optional
                   </label>
                   <Input
@@ -1186,16 +1342,64 @@ export default function AttendancePage() {
                     onChange={(e) => setManualMarkModal({ ...manualMarkModal, checkOutTime: e.target.value })}
                     className="w-full"
                   />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Standard: 6:25 PM - 7:00 PM</p>
                 </div>
               </div>
 
-              <div className="bg-slate-100 dark:bg-slate-900/30 p-3 rounded border border-slate-200 dark:border-slate-800">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-3">📋 Time Guidelines</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-blue-100 dark:border-blue-800">
+                    <p className="font-medium text-blue-700 dark:text-blue-400">🌟 Before 10 AM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Appreciated</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-green-100 dark:border-green-800">
+                    <p className="font-medium text-green-700 dark:text-green-400">✓ 10:00 AM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Perfect</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-amber-100 dark:border-amber-800">
+                    <p className="font-medium text-amber-700 dark:text-amber-400">⏰ 10:01-10:15</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Grace</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-red-100 dark:border-red-800">
+                    <p className="font-medium text-red-700 dark:text-red-400">⚠️ After 10:15</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Late</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <p className="text-xs font-semibold text-purple-900 dark:text-purple-300 mb-3">🎯 Checkout Guidelines</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-red-100 dark:border-red-800">
+                    <p className="font-medium text-red-700 dark:text-red-400">⚠️ Before 6:15 PM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Incomplete Hours</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-amber-100 dark:border-amber-800">
+                    <p className="font-medium text-amber-700 dark:text-amber-400">⏰ 6:15-6:25 PM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Grace Period</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-green-100 dark:border-green-800">
+                    <p className="font-medium text-green-700 dark:text-green-400">✓ 6:25-7:00 PM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Standard Hours</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-purple-100 dark:border-purple-800">
+                    <p className="font-medium text-purple-700 dark:text-purple-400">⭐ After 7:00 PM</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Extra Effort!</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-900/30 p-3.5 rounded border border-slate-200 dark:border-slate-700 flex items-start gap-2">
+                <div className="flex-shrink-0 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Marked as manually entered by HR with a special badge
+                  Marked as manually entered by HR with a special badge and timestamp for audit trail
                 </p>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end pt-2">
                 <Button
                   onClick={() => setManualMarkModal(null)}
                   disabled={manualMarkLoading}
@@ -1208,7 +1412,258 @@ export default function AttendancePage() {
                   disabled={manualMarkLoading || !manualMarkModal.employeeCode || !manualMarkModal.checkInTime}
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
                 >
-                  {manualMarkLoading ? "Marking..." : "Mark"}
+                  {manualMarkLoading ? "Marking..." : "Mark Attendance"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {employeeDetailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                <User className="h-4 w-4" />
+                {employeeDetailModal.employeeName} ({employeeDetailModal.employeeCode})
+              </h2>
+              <button
+                onClick={() => setEmployeeDetailModal(null)}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors"
+              >
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {attendanceLogs.filter(log => log.employeeCode === employeeDetailModal.employeeCode).length === 0 ? (
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center py-8">No attendance records found</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="text-left py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">Date</th>
+                        <th className="text-left py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">Check In</th>
+                        <th className="text-left py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">Check Out</th>
+                        <th className="text-left py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">Total Hours</th>
+                        <th className="text-left py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attendanceLogs.filter(log => log.employeeCode === employeeDetailModal.employeeCode).map((log) => {
+                        const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
+                        return (
+                          <tr key={log.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                              {log.checkInTime ? new Date(log.checkInTime).toLocaleDateString('en-IN') : '-'}
+                            </td>
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                              {log.checkInFormatted}
+                            </td>
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                              {log.checkOutFormatted || '-'}
+                            </td>
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                              {hours.formatted}
+                            </td>
+                            <td className="py-2 px-3">
+                              <StatusBadge
+                                status={log.status}
+                                variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
+                              />
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                onClick={() => setEmployeeDetailModal(null)}
+                className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+              >
+                Close
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {editAttendanceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                <Edit className="h-4 w-4" />
+                Edit Attendance
+              </h2>
+              <button
+                onClick={() => setEditAttendanceModal(null)}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors"
+              >
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  <span className="font-semibold text-slate-900 dark:text-white">{editAttendanceModal.employeeName}</span>
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded border border-slate-200 dark:border-slate-700">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Current Attendance (IST)</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Check-in:</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">
+                      {editAttendanceModal.checkInTime 
+                        ? (() => {
+                            const [date, time] = editAttendanceModal.checkInTime.split('T')
+                            const [year, month, day] = date.split('-')
+                            const [hours, minutes] = time.split(':')
+                            return `${day}/${month}/${year} ${hours}:${minutes}`
+                          })()
+                        : "Not set"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Check-out:</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">
+                      {editAttendanceModal.checkOutTime 
+                        ? (() => {
+                            const [date, time] = editAttendanceModal.checkOutTime.split('T')
+                            const [year, month, day] = date.split('-')
+                            const [hours, minutes] = time.split(':')
+                            return `${day}/${month}/${year} ${hours}:${minutes}`
+                          })()
+                        : "Not set"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Update Times</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                      Check-in Time (IST) *
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={editAttendanceModal.checkInTime}
+                      onChange={(e) => setEditAttendanceModal({ ...editAttendanceModal, checkInTime: e.target.value })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                      Check-out Time (IST) - Optional
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={editAttendanceModal.checkOutTime}
+                      onChange={(e) => setEditAttendanceModal({ ...editAttendanceModal, checkOutTime: e.target.value })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                <p className="text-xs text-green-700 dark:text-green-300">
+                  This action will be marked with an "Edited by HR" badge with timestamp for audit trail.
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  onClick={() => setEditAttendanceModal(null)}
+                  disabled={editAttendanceLoading}
+                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEditAttendance}
+                  disabled={editAttendanceLoading || !editAttendanceModal.checkInTime}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
+                >
+                  {editAttendanceLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {halfDayModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                <Clock className="h-4 w-4" />
+                Mark Half Day
+              </h2>
+              <button
+                onClick={() => setHalfDayModal(null)}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors"
+              >
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  <span className="font-semibold text-slate-900 dark:text-white">{halfDayModal.employeeName}</span>
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  HR Action: Only HR can mark an employee as half day due to unforeseen circumstances.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  Reason for Half Day *
+                </label>
+                <Textarea
+                  placeholder="Enter reason (e.g., Personal emergency, Medical appointment, Client meeting, etc.)"
+                  value={halfDayModal.reason}
+                  onChange={(e) => setHalfDayModal({ ...halfDayModal, reason: e.target.value.slice(0, 500) })}
+                  className="min-h-[100px] resize-none"
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{halfDayModal.reason.length}/500</p>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  ⚠️ This will mark the employee's attendance as half day for the day. This action is logged for audit purposes.
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  onClick={() => setHalfDayModal(null)}
+                  disabled={halfDayModalLoading}
+                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleMarkHalfDay}
+                  disabled={halfDayModalLoading || !halfDayModal.reason.trim()}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white font-medium transition-all"
+                >
+                  {halfDayModalLoading ? "Marking..." : "Confirm Half Day"}
                 </Button>
               </div>
             </div>

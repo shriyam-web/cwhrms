@@ -15,10 +15,8 @@ interface Employee {
   id: string
   email: string
   name: string
+  employeeCode: string
   phone?: string
-  city?: string
-  baseSalary: number
-  role: string
   status: string
 }
 
@@ -97,23 +95,22 @@ export default function EmployeesPage() {
         <DataTable searchPlaceholder="Search employees...">
           <DataTableHead>
             <DataTableHeader>Name</DataTableHeader>
+            <DataTableHeader>Employee Code</DataTableHeader>
             <DataTableHeader>Email</DataTableHeader>
             <DataTableHeader>Phone</DataTableHeader>
-            <DataTableHeader>City</DataTableHeader>
-            <DataTableHeader>Salary</DataTableHeader>
             <DataTableHeader>Status</DataTableHeader>
             <DataTableHeader>Actions</DataTableHeader>
           </DataTableHead>
           <DataTableBody>
             {loading ? (
               <DataTableRow>
-                <DataTableCell colSpan={7} className="text-center py-8">
+                <DataTableCell colSpan={6} className="text-center py-8">
                   <div>Loading employees...</div>
                 </DataTableCell>
               </DataTableRow>
             ) : employees.length === 0 ? (
               <DataTableRow>
-                <DataTableCell colSpan={7} className="text-center py-8">
+                <DataTableCell colSpan={6} className="text-center py-8">
                   <div className="text-muted-foreground">No employees found</div>
                 </DataTableCell>
               </DataTableRow>
@@ -123,14 +120,9 @@ export default function EmployeesPage() {
                   <DataTableCell>
                     <div className="font-medium">{emp.name}</div>
                   </DataTableCell>
+                  <DataTableCell>{emp.employeeCode}</DataTableCell>
                   <DataTableCell>{emp.email}</DataTableCell>
                   <DataTableCell>{emp.phone || "-"}</DataTableCell>
-                  <DataTableCell>{emp.city || "-"}</DataTableCell>
-                  <DataTableCell>
-                    <span className="font-semibold text-green-600 dark:text-green-400">
-                      ₹{emp.baseSalary?.toLocaleString() || "-"}
-                    </span>
-                  </DataTableCell>
                   <DataTableCell>
                     <StatusBadge status={emp.status} variant="success" />
                   </DataTableCell>

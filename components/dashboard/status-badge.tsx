@@ -13,9 +13,16 @@ export function StatusBadge({ status, variant = "info" }: StatusBadgeProps) {
     info: "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300",
   }
 
+  const formatStatus = (str: string) => {
+    return str
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+  }
+
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-medium ${variants[variant]}`}>
-      {status}
+      {formatStatus(status)}
     </span>
   )
 }

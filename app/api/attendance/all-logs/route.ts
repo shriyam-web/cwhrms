@@ -109,8 +109,8 @@ export async function GET(req: NextRequest) {
           status: status,
           arrivalStatus: arrivalStatus,
           departureStatus: departureStatus,
-          dbStatus: log.status,
           isEligibleForHalfDay: isEligibleForHalfDay,
+          isHalfDay: log.status === "HALF_DAY",
           latitude: log.latitude,
           longitude: log.longitude,
           notes: log.notes || "",
@@ -120,6 +120,9 @@ export async function GET(req: NextRequest) {
             : "Not checked out",
           markedByHR: log.markedByHR || false,
           markedByHRAt: log.markedByHRAt || null,
+          editedByHRId: log.editedByHRId || null,
+          editedByHRName: log.editedByHRName || null,
+          editedByHRAt: log.editedByHRAt || null,
         }
       })
     )

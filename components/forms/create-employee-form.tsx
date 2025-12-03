@@ -21,7 +21,7 @@ const formatDate = (value?: string | Date | null) => {
 }
 
 const buildFormData = (employee?: any) => ({
-  name: employee?.user?.name || "",
+  name: employee?.name || "",
   email: employee?.email || "",
   phone: employee?.phone || "",
   password: "",
@@ -36,8 +36,26 @@ const buildFormData = (employee?: any) => ({
 
 export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: CreateEmployeeFormProps) {
   const [loading, setLoading] = useState(false)
+  const [fullEmployeeData, setFullEmployeeData] = useState(editingEmployee)
   const [formData, setFormData] = useState(() => buildFormData(editingEmployee))
   const [passwordError, setPasswordError] = useState("")
+
+  useEffect(() => {
+    if (editingEmployee?.id) {
+      const fetchEmployeeDetails = async () => {
+        try {
+          const response = await apiClient.get<{ employee: any }>(`/api/employees/${editingEmployee.id}`)
+          const fullData = response.employee
+          setFullEmployeeData(fullData)
+          setFormData(buildFormData(fullData))
+        } catch (error) {
+          console.error("Failed to fetch employee details:", error)
+          setFormData(buildFormData(editingEmployee))
+        }
+      }
+      fetchEmployeeDetails()
+    }
+  }, [editingEmployee?.id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -56,9 +74,8 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
   }
 
   useEffect(() => {
-    setFormData(buildFormData(editingEmployee))
     setPasswordError("")
-  }, [editingEmployee])
+  }, [editingEmployee?.id])
 
   // Auto-generate employee code when city and dateOfBirth are available
   useEffect(() => {
@@ -84,7 +101,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
     setLoading(true)
 
     try {
-      if (editingEmployee) {
+      if (editingEmployee || fullEmployeeData?.id) {
         const updateData = {
           phone: formData.phone,
           address: formData.address,
@@ -93,7 +110,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
           zipCode: formData.zipCode,
           baseSalary: formData.baseSalary,
         }
-        await apiClient.put(`/api/employees/${editingEmployee.id}`, updateData)
+        await apiClient.put(`/api/employees/${fullEmployeeData?.id || editingEmployee.id}`, updateData)
         toast.success("Employee updated successfully")
       } else {
         const createData = {

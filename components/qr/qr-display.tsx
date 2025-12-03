@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { RotateCw } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 
 export function QrDisplay() {
   const [qrCode, setQrCode] = useState<string | null>(null)
-  const [expiresIn, setExpiresIn] = useState(30)
+  const [expiresIn, setExpiresIn] = useState(45)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,7 +19,7 @@ export function QrDisplay() {
     try {
       const response = await apiClient.post<any>("/api/attendance/generate-qr", {})
       setQrCode(response.qrCode)
-      setExpiresIn(response.expiresIn)
+      setExpiresIn(45)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to generate QR code"
       console.error("Failed to generate QR code:", error)
@@ -31,7 +33,7 @@ export function QrDisplay() {
     generateQR()
     const interval = setInterval(() => {
       generateQR()
-    }, 30000) // Rotate every 30 seconds
+    }, 45000) // Rotate every 45 seconds
 
     return () => clearInterval(interval)
   }, [])
@@ -81,8 +83,17 @@ export function QrDisplay() {
         </div>
       )}
 
+      <Button
+        onClick={() => generateQR()}
+        disabled={loading}
+        className="gap-2"
+      >
+        <RotateCw className="h-4 w-4" />
+        Regenerate QR
+      </Button>
+
       <div className="w-full bg-muted rounded-lg p-4 text-center">
-        <p className="text-sm text-muted-foreground">QR Code rotates every 30 seconds for security</p>
+        <p className="text-sm text-muted-foreground">QR Code rotates every 45 seconds for security</p>
       </div>
     </Card>
   )

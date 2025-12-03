@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
         status: status,
         arrivalStatus: arrivalStatus,
         departureStatus: departureStatus,
-        dbStatus: log.status,
+        isHalfDay: log.status === "HALF_DAY",
         latitude: log.latitude,
         longitude: log.longitude,
         deviceId: log.deviceId,
