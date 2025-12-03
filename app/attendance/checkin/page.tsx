@@ -260,14 +260,14 @@ function CheckinContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0">
-        <div className="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-6 py-5 rounded-t-lg">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-md border-0">
+        <div className="bg-slate-800 text-white px-6 py-5">
           <h1 className="text-3xl font-bold">Mark Attendance</h1>
-          <p className="text-blue-200 text-sm mt-1">Scan QR or enter code</p>
+          <p className="text-slate-300 text-sm mt-1">Scan QR or enter code</p>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           {messageType && (
             <div
               className={`flex gap-3 rounded-lg p-3 text-sm ${
@@ -287,24 +287,24 @@ function CheckinContent() {
             </div>
           )}
 
-          <div className={`bg-gradient-to-br ${getStatusColor(statusDisplay?.color || "blue")} border rounded-lg p-4`}>
-            <div className="space-y-2">
-              <p className="text-xs font-medium opacity-70">Current Time</p>
-              <p className="text-3xl font-mono font-bold">
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Current Time</p>
+              <p className="text-3xl font-mono font-bold text-slate-800">
                 {currentTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
               </p>
-              <div className="pt-2 border-t border-current border-opacity-20">
-                <p className={`text-sm font-bold px-3 py-1 rounded-full inline-block ${getStatusBgColor(statusDisplay?.color || "blue")}`}>
+              <div className="pt-3 border-t border-slate-200">
+                <span className={`text-sm font-bold px-3 py-1 rounded-full inline-block ${getStatusBgColor(statusDisplay?.color || "blue")}`}>
                   {statusDisplay?.label || "Loading..."}
-                </p>
+                </span>
               </div>
             </div>
           </div>
 
           {attendanceType === "checkout" && todayCheckInTime && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-blue-900">Total Hours</span>
+                <span className="text-sm font-semibold text-slate-700">Total Hours</span>
                 <span
                   className={`text-base font-bold px-3 py-1 rounded ${
                     isLessThanRequired()
@@ -324,10 +324,10 @@ function CheckinContent() {
                 type="button"
                 onClick={() => setAttendanceType("checkin")}
                 disabled={loading}
-                className={`flex-1 py-2 px-2 rounded-lg font-medium text-sm transition-all ${
+                className={`flex-1 py-2 px-2 rounded font-medium text-sm transition-all ${
                   attendanceType === "checkin"
-                    ? "bg-green-600 text-white shadow"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 <Clock className="h-4 w-4 inline mr-1" />
@@ -337,10 +337,10 @@ function CheckinContent() {
                 type="button"
                 onClick={() => setAttendanceType("checkout")}
                 disabled={loading}
-                className={`flex-1 py-2 px-2 rounded-lg font-medium text-sm transition-all ${
+                className={`flex-1 py-2 px-2 rounded font-medium text-sm transition-all ${
                   attendanceType === "checkout"
-                    ? "bg-blue-600 text-white shadow"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 <LogOut className="h-4 w-4 inline mr-1" />
@@ -349,21 +349,21 @@ function CheckinContent() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="employeeCode" className="text-xs font-semibold">Employee Code</Label>
+              <Label htmlFor="employeeCode" className="text-xs font-semibold text-slate-700">Employee Code</Label>
               <Input
                 id="employeeCode"
                 placeholder="CW/XXX-DDMM"
                 value={employeeCode}
                 onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
                 disabled={loading}
-                className="text-center text-lg tracking-widest font-mono font-bold"
+                className="text-center text-lg tracking-widest font-mono font-bold border-slate-300"
                 autoFocus
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full py-2 text-base font-semibold" 
+              className="w-full py-2 text-base font-semibold bg-slate-800 hover:bg-slate-900 text-white" 
               disabled={loading} 
             >
               {loading ? (
@@ -392,7 +392,7 @@ function CheckinContent() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full text-sm"
+                className="w-full text-sm text-slate-700 border-slate-300"
                 onClick={handleReset}
                 disabled={loading}
               >
