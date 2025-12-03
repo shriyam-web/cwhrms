@@ -693,6 +693,16 @@ export default function AttendancePage() {
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedDate(selectedDate === "all" ? null : "all")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedDate === "all"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                All
+              </button>
               {getUniqueDates().map(dateStr => (
                 <button
                   key={dateStr}
@@ -711,12 +721,14 @@ export default function AttendancePage() {
             <div className="space-y-6">
               {selectedDate ? (
                 (() => {
-                  const dateLogsFiltered = getLogsForDate(selectedDate).filter(log => {
-                    let pass = true
-                    if (selectedEmployee) pass = pass && log.employeeCode === selectedEmployee
-                    if (statusFilter !== "all") pass = pass && log.status === statusFilter
-                    return pass
-                  })
+                  const dateLogsFiltered = selectedDate === "all" 
+                    ? filteredLogs
+                    : getLogsForDate(selectedDate).filter(log => {
+                      let pass = true
+                      if (selectedEmployee) pass = pass && log.employeeCode === selectedEmployee
+                      if (statusFilter !== "all") pass = pass && log.status === statusFilter
+                      return pass
+                    })
                   return dateLogsFiltered.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full">
