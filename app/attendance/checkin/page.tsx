@@ -263,20 +263,26 @@ function CheckinContent() {
           const code = jsQR(imageData.data, imageData.width, imageData.height)
           
           if (code) {
-            isScanning = false
-            clearInterval(scanInterval)
-            stream.getTracks().forEach(track => track.stop())
-            if (document.body.contains(video)) document.body.removeChild(video)
-            if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
+            const qrText = code.data
+            const tokenMatch = qrText.match(/token=([^&]+)/)
             
-            const qrData = code.data
-            setToken(qrData)
-            setMessage("")
-            setMessageType(null)
-            setEmployeeCode("")
-            
-            if (typeof window !== "undefined") {
-              window.history.replaceState({}, document.title, `?token=${encodeURIComponent(qrData)}`)
+            if (tokenMatch && tokenMatch[1]) {
+              const extractedToken = decodeURIComponent(tokenMatch[1])
+              
+              isScanning = false
+              clearInterval(scanInterval)
+              stream.getTracks().forEach(track => track.stop())
+              if (document.body.contains(video)) document.body.removeChild(video)
+              if (document.body.contains(closeButton)) document.body.removeChild(closeButton)
+              
+              setToken(extractedToken)
+              setMessage("")
+              setMessageType(null)
+              setEmployeeCode("")
+              
+              if (typeof window !== "undefined") {
+                window.history.replaceState({}, document.title, `?token=${encodeURIComponent(extractedToken)}`)
+              }
             }
           }
         } catch (err) {
