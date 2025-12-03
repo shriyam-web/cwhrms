@@ -47,8 +47,9 @@ export async function GET(req: NextRequest) {
     const formattedLogs = attendanceLogs.map((log) => {
       const status = log.checkOutTime ? "CHECKED OUT" : "CHECKED IN"
       
-      const checkInHour = log.checkInTime.getHours()
-      const checkInMinutes = log.checkInTime.getMinutes()
+      const istCheckInTime = new Date(log.checkInTime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
+      const checkInHour = istCheckInTime.getHours()
+      const checkInMinutes = istCheckInTime.getMinutes()
       const checkInTimeMinutes = checkInHour * 60 + checkInMinutes
       const officeStartMinutes = 10 * 60
       const gracePeriod = 15
@@ -66,8 +67,9 @@ export async function GET(req: NextRequest) {
 
       let departureStatus = "NOT CHECKED OUT"
       if (log.checkOutTime) {
-        const checkOutHour = log.checkOutTime.getHours()
-        const checkOutMinutes = log.checkOutTime.getMinutes()
+        const istCheckOutTime = new Date(log.checkOutTime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
+        const checkOutHour = istCheckOutTime.getHours()
+        const checkOutMinutes = istCheckOutTime.getMinutes()
         const checkOutTimeMinutes = checkOutHour * 60 + checkOutMinutes
         
         const CHECKOUT_EARLY_TIME = 18 * 60 + 15
@@ -96,9 +98,9 @@ export async function GET(req: NextRequest) {
         latitude: log.latitude,
         longitude: log.longitude,
         deviceId: log.deviceId,
-        checkInFormatted: log.checkInTime.toLocaleString('en-IN'),
+        checkInFormatted: log.checkInTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         checkOutFormatted: log.checkOutTime 
-          ? log.checkOutTime.toLocaleString('en-IN')
+          ? log.checkOutTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
           : "Not checked out",
       }
     })
