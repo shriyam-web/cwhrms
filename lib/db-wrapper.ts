@@ -232,6 +232,7 @@ export const prisma = {
         email: data.email,
         phone: data.phone || null,
         employeeCode: data.employeeCode || null,
+        position: data.position || null,
         address: data.address || null,
         city: data.city || null,
         state: data.state || null,

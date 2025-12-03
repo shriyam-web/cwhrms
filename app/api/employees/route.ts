@@ -5,21 +5,26 @@ import { db } from "@/lib/db"
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization")
+    console.log("[Employees GET] Auth header:", authHeader ? "present" : "missing")
     if (!authHeader?.startsWith("Bearer ")) {
+      console.log("[Employees GET] No bearer token found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const token = authHeader.slice(7)
     const payload = verifyToken(token)
     if (!payload) {
+      console.log("[Employees GET] Invalid token")
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
     const employeeCollection = await db.employeeProfiles()
     const employees = await employeeCollection
-      .find({ status: "ACTIVE" })
+      .find({})
       .sort({ name: 1 })
       .toArray()
+
+    console.log("[Employees GET] Found employees count:", employees.length)
 
     const formattedEmployees = employees.map((emp) => ({
       id: emp._id.toString(),
@@ -27,6 +32,7 @@ export async function GET(req: NextRequest) {
       employeeCode: emp.employeeCode,
       email: emp.email,
       phone: emp.phone,
+      position: emp.profile?.type || emp.position || "",
       status: emp.status,
     }))
 
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, password, employeeCode, phone, address, city, state, zipCode, dateOfBirth, baseSalary } = body
+    const { name, email, password, employeeCode, phone, position, address, city, state, zipCode, dateOfBirth, baseSalary } = body
 
     if (!name || !email || !password || !employeeCode) {
       return NextResponse.json(
@@ -61,16 +67,10 @@ export async function POST(req: NextRequest) {
     }
 
     const employeeCollection = await db.employeeProfiles()
-    const usersCollection = await db.users()
 
     const existingEmployee = await employeeCollection.findOne({ email })
     if (existingEmployee) {
       return NextResponse.json({ error: "Email already exists" }, { status: 400 })
-    }
-
-    const existingUser = await usersCollection.findOne({ email })
-    if (existingUser) {
-      return NextResponse.json({ error: "Email already registered as a user" }, { status: 400 })
     }
 
     const hashedPassword = await hashPassword(password)
@@ -78,8 +78,10 @@ export async function POST(req: NextRequest) {
     const newEmployee = {
       name,
       email,
+      password: hashedPassword,
       employeeCode,
       phone: phone || "",
+      position: position || "",
       address: address || "",
       city: city || "",
       state: state || "",
@@ -92,17 +94,6 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await employeeCollection.insertOne(newEmployee)
-
-    const newUser = {
-      email,
-      password: hashedPassword,
-      role: "EMPLOYEE",
-      employeeId: result.insertedId.toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    await usersCollection.insertOne(newUser)
 
     return NextResponse.json(
       {

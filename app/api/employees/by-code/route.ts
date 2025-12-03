@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       email: employee.email,
       employeeCode: employee.employeeCode,
       phone: employee.phone,
+      position: employee.position,
       status: employee.status,
     }
 

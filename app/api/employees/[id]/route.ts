@@ -8,6 +8,7 @@ const updateEmployeeSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().optional(),
   employeeCode: z.string().regex(/^CW\/[A-Z]{3}-\d{4}$/, "Employee code must follow pattern CW/XXX-DDMM").optional(),
+  position: z.string().max(100).optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       email: employee.email,
       name: employee.name,
       phone: employee.phone,
+      position: employee.profile?.type || employee.position || "",
       city: employee.city,
       baseSalary: employee.baseSalary,
       role: employee.role,
@@ -96,9 +98,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       updatedAt: new Date(),
     }
 
-    if (data.name) updateData.name = data.name
+    if (data.name !== undefined) updateData.name = data.name
     if (data.phone !== undefined) updateData.phone = data.phone
     if (data.employeeCode) updateData.employeeCode = data.employeeCode
+    if (data.position !== undefined) updateData.position = data.position
     if (data.address !== undefined) updateData.address = data.address
     if (data.city !== undefined) updateData.city = data.city
     if (data.state !== undefined) updateData.state = data.state
@@ -121,6 +124,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       email: updatedEmployee.email,
       name: updatedEmployee.name,
       phone: updatedEmployee.phone,
+      position: updatedEmployee.position,
       city: updatedEmployee.city,
       baseSalary: updatedEmployee.baseSalary,
       role: updatedEmployee.role,

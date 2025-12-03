@@ -26,6 +26,7 @@ const buildFormData = (employee?: any) => ({
   phone: employee?.phone || "",
   password: "",
   employeeCode: employee?.employeeCode || "",
+  position: employee?.position || "",
   address: employee?.address || "",
   city: employee?.city || "",
   state: employee?.state || "",
@@ -104,6 +105,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
       if (editingEmployee || fullEmployeeData?.id) {
         const updateData = {
           phone: formData.phone,
+          position: formData.position,
           address: formData.address,
           city: formData.city,
           state: formData.state,
@@ -119,6 +121,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
           ...(formData.phone && { phone: formData.phone }),
           ...(formData.password && { password: formData.password }),
           ...(formData.employeeCode && { employeeCode: formData.employeeCode }),
+          ...(formData.position && { position: formData.position }),
           ...(formData.address && { address: formData.address }),
           ...(formData.city && { city: formData.city }),
           ...(formData.state && { state: formData.state }),
@@ -216,6 +219,16 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
             onChange={handleChange}
             placeholder="Auto-generated"
             disabled={!!editingEmployee}
+          />
+        </div>
+        <div>
+          <label htmlFor="position" className="text-sm font-medium block mb-1">Position</label>
+          <Input
+            id="position"
+            name="position"
+            value={formData.position}
+            onChange={handleChange}
+            placeholder="Job Title"
           />
         </div>
         <div>

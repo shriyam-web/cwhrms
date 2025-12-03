@@ -17,6 +17,7 @@ interface Employee {
   name: string
   employeeCode: string
   phone?: string
+  position?: string
   status: string
 }
 
@@ -35,10 +36,12 @@ export default function EmployeesPage() {
     setLoading(true)
     try {
       const response = await apiClient.get<{ employees: Employee[] }>("/api/employees")
-      setEmployees(response.employees || [])
+      console.log("API response:", response)
+      setEmployees(response.employees || response.data?.employees || [])
     } catch (error) {
-      toast.error("Failed to fetch employees")
-      console.error(error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch employees"
+      toast.error(errorMessage)
+      console.error("Fetch error:", error)
     } finally {
       setLoading(false)
     }
@@ -96,6 +99,7 @@ export default function EmployeesPage() {
           <DataTableHead>
             <DataTableHeader>Name</DataTableHeader>
             <DataTableHeader>Employee Code</DataTableHeader>
+            <DataTableHeader>Position</DataTableHeader>
             <DataTableHeader>Email</DataTableHeader>
             <DataTableHeader>Phone</DataTableHeader>
             <DataTableHeader>Status</DataTableHeader>
@@ -104,13 +108,13 @@ export default function EmployeesPage() {
           <DataTableBody>
             {loading ? (
               <DataTableRow>
-                <DataTableCell colSpan={6} className="text-center py-8">
+                <DataTableCell colSpan={7} className="text-center py-8">
                   <div>Loading employees...</div>
                 </DataTableCell>
               </DataTableRow>
             ) : employees.length === 0 ? (
               <DataTableRow>
-                <DataTableCell colSpan={6} className="text-center py-8">
+                <DataTableCell colSpan={7} className="text-center py-8">
                   <div className="text-muted-foreground">No employees found</div>
                 </DataTableCell>
               </DataTableRow>
@@ -121,6 +125,7 @@ export default function EmployeesPage() {
                     <div className="font-medium">{emp.name}</div>
                   </DataTableCell>
                   <DataTableCell>{emp.employeeCode}</DataTableCell>
+                  <DataTableCell>{emp.position || "-"}</DataTableCell>
                   <DataTableCell>{emp.email}</DataTableCell>
                   <DataTableCell>{emp.phone || "-"}</DataTableCell>
                   <DataTableCell>
