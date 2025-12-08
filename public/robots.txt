@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /api
+
+User-agent: Googlebot
+Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /api
+
+Sitemap: https://hrms.citywittycommunity.com/sitemap.xml

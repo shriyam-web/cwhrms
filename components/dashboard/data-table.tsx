@@ -53,9 +53,9 @@ export function DataTableRow({ children, className }: { children: React.ReactNod
 }
 
 export function DataTableHeader({ children }: { children: React.ReactNode }) {
-  return <th className="text-left py-3 px-4 font-semibold text-white dark:text-slate-200 text-xs tracking-wider uppercase">{children}</th>
+  return <th className="text-left py-2.5 px-3 font-semibold text-white dark:text-slate-200 text-xs tracking-wider uppercase">{children}</th>
 }
 
 export function DataTableCell({ children, colSpan, className }: { children: React.ReactNode; colSpan?: number; className?: string }) {
-  return <td colSpan={colSpan} className={`py-3 px-4 text-slate-700 dark:text-slate-300 ${className || ""}`}>{children}</td>
+  return <td colSpan={colSpan} className={`py-2.5 px-3 text-slate-700 dark:text-slate-300 ${className || ""}`}>{children}</td>
 }

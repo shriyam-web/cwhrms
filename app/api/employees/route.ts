@@ -66,6 +66,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
+  
+
     const employeeCollection = await db.employeeProfiles()
 
     const existingEmployee = await employeeCollection.findOne({ email })

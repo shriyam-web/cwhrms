@@ -77,22 +77,29 @@ export default function MyAttendancePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-            My Attendance
-          </h1>
-          <p className="text-muted-foreground mt-2">View your check-in and check-out records</p>
+      <div className="space-y-8 md:space-y-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              📋
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-slate-50 dark:via-slate-200 dark:to-slate-50 bg-clip-text text-transparent">
+                My Attendance
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">View your complete check-in and check-out records with detailed analytics</p>
+            </div>
+          </div>
         </div>
 
-        <Card className="p-6">
-          <div className="flex gap-4 mb-6">
+        <Card className="p-6 sm:p-8 shadow-lg border-0 bg-gradient-to-br from-slate-50 to-slate-50/50 dark:from-slate-950/20 dark:to-slate-950/5">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
-              <label className="text-sm font-medium">Month</label>
+              <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Month</label>
               <select
                 value={month}
                 onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-2 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 {[...Array(12)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -102,11 +109,11 @@ export default function MyAttendancePage() {
               </select>
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium">Year</label>
+              <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Year</label>
               <select
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value))}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-2 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 {[2024, 2025, 2026].map((y) => (
                   <option key={y} value={y}>
@@ -116,112 +123,120 @@ export default function MyAttendancePage() {
               </select>
             </div>
             <div className="flex items-end">
-              <Button onClick={fetchAttendance} disabled={dataLoading}>
+              <Button 
+                onClick={fetchAttendance} 
+                disabled={dataLoading}
+                className="h-11 px-6 sm:px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              >
                 {dataLoading ? "Loading..." : "Refresh"}
               </Button>
             </div>
           </div>
 
           {error && (
-            <div className="flex gap-2 rounded-lg bg-red-50 p-4 text-red-900 mb-4">
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
-              <p className="text-sm">{error}</p>
+            <div className="flex gap-3 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 p-5 text-red-800 dark:text-red-300 mb-6">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium">{error}</p>
             </div>
           )}
 
           {attendanceLogs.length === 0 && !dataLoading && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No attendance records found for this period</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
+                <Clock className="h-8 w-8 text-slate-400" />
+              </div>
+              <p className="text-lg font-semibold">No attendance records found</p>
+              <p className="text-sm mt-1">Try selecting a different month or year</p>
             </div>
           )}
 
           {attendanceLogs.length > 0 && (
-            <DataTable searchPlaceholder="Search attendance...">
-              <DataTableHead>
-                <DataTableHeader>Check In</DataTableHeader>
-                <DataTableHeader>Check Out</DataTableHeader>
-                <DataTableHeader>Status</DataTableHeader>
-                <DataTableHeader>Location</DataTableHeader>
-              </DataTableHead>
-              <DataTableBody>
-                {attendanceLogs.map((log) => (
-                  <DataTableRow key={log.id}>
-                    <DataTableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock className={`h-4 w-4 ${
-                          log.arrivalStatus === "APPRECIATED" ? "text-purple-600" : 
-                          log.arrivalStatus === "ON TIME" ? "text-green-600" :
-                          log.arrivalStatus === "GRACE" ? "text-yellow-600" :
-                          "text-red-600"
-                        }`} />
-                        <div className={`px-2 py-1 rounded text-sm font-medium ${
-                          log.arrivalStatus === "APPRECIATED" ? "bg-purple-100 text-purple-800" : 
-                          log.arrivalStatus === "ON TIME" ? "bg-green-100 text-green-800" :
-                          log.arrivalStatus === "GRACE" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
-                        }`}>
-                          {log.checkInFormatted}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <DataTable searchPlaceholder="Search attendance...">
+                <DataTableHead>
+                  <DataTableHeader>Check In</DataTableHeader>
+                  <DataTableHeader>Check Out</DataTableHeader>
+                  <DataTableHeader>Status</DataTableHeader>
+                  <DataTableHeader>Location</DataTableHeader>
+                </DataTableHead>
+                <DataTableBody>
+                  {attendanceLogs.map((log) => (
+                    <DataTableRow key={log.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <DataTableCell>
+                        <div className="flex items-center gap-2">
+                          <Clock className={`h-4 w-4 flex-shrink-0 ${
+                            log.arrivalStatus === "APPRECIATED" ? "text-purple-600" : 
+                            log.arrivalStatus === "ON TIME" ? "text-green-600" :
+                            log.arrivalStatus === "GRACE" ? "text-yellow-600" :
+                            "text-red-600"
+                          }`} />
+                          <div className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold ${
+                            log.arrivalStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : 
+                            log.arrivalStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
+                            log.arrivalStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" :
+                            "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                          }`}>
+                            {log.checkInFormatted}
+                          </div>
                         </div>
-                      </div>
-                    </DataTableCell>
-                    <DataTableCell>
-                      <div className="flex items-center gap-2">
-                        {log.checkOutFormatted && log.departureStatus !== "NOT CHECKED OUT" ? (
-                          <>
-                            <LogOut className={`h-4 w-4 ${
-                              log.departureStatus === "EARLY" ? "text-red-600" :
-                              log.departureStatus === "GRACE" ? "text-yellow-600" :
-                              log.departureStatus === "ON TIME" ? "text-green-600" :
-                              log.departureStatus === "APPRECIATED" ? "text-purple-600" :
-                              "text-slate-600"
-                            }`} />
-                            <span className={`px-2 py-1 rounded text-sm font-medium ${
-                              log.departureStatus === "EARLY" ? "bg-red-100 text-red-800" :
-                              log.departureStatus === "GRACE" ? "bg-yellow-100 text-yellow-800" :
-                              log.departureStatus === "ON TIME" ? "bg-green-100 text-green-800" :
-                              log.departureStatus === "APPRECIATED" ? "bg-purple-100 text-purple-800" :
-                              ""
-                            }`}>
-                              {log.checkOutFormatted}
-                            </span>
-                          </>
-                        ) : (
-                          <p className="text-amber-600">Not checked out</p>
-                        )}
-                      </div>
-                    </DataTableCell>
-                    <DataTableCell>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                        log.status === "CHECKED OUT"
-                          ? "bg-green-100 text-green-800"
-                          : log.status === "CHECKED IN"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {log.status}
-                      </span>
-                    </DataTableCell>
-                    <DataTableCell>
-                      {log.latitude && log.longitude ? (
-                        <div className="flex items-center gap-1 text-xs">
-                          <MapPin className="h-3 w-3" />
+                      </DataTableCell>
+                      <DataTableCell>
+                        <div className="flex items-center gap-2">
+                          {log.checkOutFormatted && log.departureStatus !== "NOT CHECKED OUT" ? (
+                            <>
+                              <LogOut className={`h-4 w-4 flex-shrink-0 ${
+                                log.departureStatus === "EARLY" ? "text-red-600" :
+                                log.departureStatus === "GRACE" ? "text-yellow-600" :
+                                log.departureStatus === "ON TIME" ? "text-green-600" :
+                                log.departureStatus === "APPRECIATED" ? "text-purple-600" :
+                                "text-slate-600"
+                              }`} />
+                              <span className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold ${
+                                log.departureStatus === "EARLY" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
+                                log.departureStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" :
+                                log.departureStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
+                                log.departureStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
+                                ""
+                              }`}>
+                                {log.checkOutFormatted}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Not checked out</span>
+                          )}
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell>
+                        <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                          log.status === "CHECKED OUT"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                            : log.status === "CHECKED IN"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                        }`}>
+                          {log.status}
+                        </span>
+                      </DataTableCell>
+                      <DataTableCell>
+                        {log.latitude && log.longitude ? (
                           <a
                             href={`https://maps.google.com/?q=${log.latitude},${log.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                           >
-                            View
+                            <MapPin className="h-3.5 w-3.5" />
+                            View Location
                           </a>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">No location</span>
-                      )}
-                    </DataTableCell>
-                  </DataTableRow>
-                ))}
-              </DataTableBody>
-            </DataTable>
+                        ) : (
+                          <span className="text-muted-foreground text-xs font-medium">No location</span>
+                        )}
+                      </DataTableCell>
+                    </DataTableRow>
+                  ))}
+                </DataTableBody>
+              </DataTable>
+            </div>
           )}
 
           <div className="mt-12 pt-8">

@@ -382,6 +382,17 @@ export default function AttendancePage() {
 
   const getUniqueDates = () => {
     const dates = new Set<string>()
+    const today = new Date()
+    const daysInMonth = new Date(year, month, 0).getDate()
+    const isCurrentMonth = today.getMonth() + 1 === month && today.getFullYear() === year
+    const maxDay = isCurrentMonth ? today.getDate() : daysInMonth
+    
+    for (let i = 1; i <= maxDay; i++) {
+      const date = new Date(year, month - 1, i)
+      const dateStr = date.toISOString().split('T')[0]
+      dates.add(dateStr)
+    }
+    
     attendanceLogs.forEach(log => {
       if (log.checkInTime) {
         const date = new Date(log.checkInTime)
@@ -389,6 +400,7 @@ export default function AttendancePage() {
         dates.add(dateStr)
       }
     })
+    
     return Array.from(dates).sort().reverse()
   }
 
@@ -524,19 +536,19 @@ export default function AttendancePage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-slideUp">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-              Attendance
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+              Attendance Management
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage and track employee attendance</p>
+            <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm font-medium">Track and manage employee attendance records</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setManualMarkModal({ isOpen: true, employeeCode: "", employeeName: "", checkInTime: getISTDatetimeLocal(), checkOutTime: "" })} className="gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium shadow-sm">
+            <Button onClick={() => setManualMarkModal({ isOpen: true, employeeCode: "", employeeName: "", checkInTime: getISTDatetimeLocal(), checkOutTime: "" })} className="gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all">
               <CheckCircle className="h-4 w-4" />
               Mark Attendance
             </Button>
-            <Button onClick={() => router.push("/dashboard/attendance/qr-display")} className="gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">
+            <Button onClick={() => router.push("/dashboard/attendance/qr-display")} className="gap-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold transition-all">
               <QrCode className="h-4 w-4" />
               QR Code
             </Button>
@@ -544,38 +556,38 @@ export default function AttendancePage() {
         </div>
 
         {selectedEmployee && (
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <Card className="p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-2">Working Days</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.workingDaysToDate}</p>
-              <p className="text-xs text-slate-500 mt-1">of {stats.workingDaysInMonth} total</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <Card className="p-3 border border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30 hover:shadow-md transition-all">
+              <p className="text-xs text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wide mb-1.5">Working Days</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-200">{stats.workingDaysToDate}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">of {stats.workingDaysInMonth}</p>
             </Card>
-            <Card className="p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-2">Days Worked</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.daysWithRecords}</p>
-              <p className="text-xs text-slate-500 mt-1">attendance recorded</p>
+            <Card className="p-3 border border-indigo-200 dark:border-indigo-900 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/50 dark:to-indigo-900/30 hover:shadow-md transition-all">
+              <p className="text-xs text-indigo-600 dark:text-indigo-300 font-bold uppercase tracking-wide mb-1.5">Days Worked</p>
+              <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-200">{stats.daysWithRecords}</p>
+              <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">recorded</p>
             </Card>
-            <Card className="p-4 border border-yellow-200 dark:border-yellow-900 bg-yellow-50 dark:bg-yellow-950">
-              <p className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold mb-2">Leaves Taken</p>
-              <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.leavesTaken}</p>
-              <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">so far</p>
+            <Card className="p-3 border border-amber-200 dark:border-amber-900 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 hover:shadow-md transition-all">
+              <p className="text-xs text-amber-600 dark:text-amber-300 font-bold uppercase tracking-wide mb-1.5">Leaves</p>
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-200">{stats.leavesTaken}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">taken</p>
             </Card>
-            <Card className="p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-2">Daily Average</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatHoursToHM(stats.dailyAverage)}</p>
-              <p className="text-xs text-slate-500 mt-1">per day worked</p>
+            <Card className="p-3 border border-purple-200 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 hover:shadow-md transition-all">
+              <p className="text-xs text-purple-600 dark:text-purple-300 font-bold uppercase tracking-wide mb-1.5">Avg/Day</p>
+              <p className="text-2xl font-bold text-purple-700 dark:text-purple-200">{formatHoursToHM(stats.dailyAverage)}</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">per day</p>
             </Card>
-            <Card className="p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-2">Total Hours</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatHoursToHM(stats.totalHours)}</p>
-              <p className="text-xs text-slate-500 mt-1">worked</p>
+            <Card className="p-3 border border-cyan-200 dark:border-cyan-900 bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-950/50 dark:to-cyan-900/30 hover:shadow-md transition-all">
+              <p className="text-xs text-cyan-600 dark:text-cyan-300 font-bold uppercase tracking-wide mb-1.5">Total</p>
+              <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-200">{formatHoursToHM(stats.totalHours)}</p>
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-1 font-medium">hours</p>
             </Card>
-            <Card className={`p-4 border ${stats.criteriaAchieved ? "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950" : "border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950"}`}>
-              <p className="text-xs font-semibold mb-2 text-slate-600 dark:text-slate-400">Criteria</p>
-              <p className={`text-2xl font-bold ${stats.criteriaAchieved ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
-                {stats.criteriaAchieved ? "Met" : "Not Met"}
+            <Card className={`p-3 border transition-all hover:shadow-md ${stats.criteriaAchieved ? "border-green-200 dark:border-green-900 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30" : "border-red-200 dark:border-red-900 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/50 dark:to-red-900/30"}`}>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 text-slate-600 dark:text-slate-400">Criteria</p>
+              <p className={`text-2xl font-bold ${stats.criteriaAchieved ? "text-green-700 dark:text-green-200" : "text-red-700 dark:text-red-200"}`}>
+                {stats.criteriaAchieved ? "✓ Met" : "✗ No"}
               </p>
-              <p className="text-xs mt-1 text-slate-600 dark:text-slate-400">8.5h/day avg</p>
+              <p className="text-xs mt-1 text-slate-600 dark:text-slate-400 font-medium">8.5h</p>
             </Card>
           </div>
         )}
@@ -587,21 +599,21 @@ export default function AttendancePage() {
           </Card>
         )}
 
-        <Card className="p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Filters</h3>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowHolidayManager(true)}
-                className="text-xs h-auto py-1 px-3 bg-blue-100 border border-blue-300 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50 font-medium transition-all"
-              >
-                🏖️ Holidays
-              </Button>
+        <Card className="p-6 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Filter & Search</h3>
+            <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={() => setShowCalendar(true)}
-                className="text-xs h-auto py-1 px-3 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium transition-all"
+                className="text-xs h-auto py-2 px-4 bg-blue-100 border border-blue-300 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50 font-semibold transition-all"
               >
                 📅 Calendar
+              </Button>
+              <Button
+                onClick={() => setShowHolidayManager(true)}
+                className="text-xs h-auto py-2 px-4 bg-amber-100 border border-amber-300 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50 font-semibold transition-all"
+              >
+                🏖️ Holidays
               </Button>
               <Button
                 onClick={() => {
@@ -610,13 +622,13 @@ export default function AttendancePage() {
                   setSelectedEmployee("")
                   setStatusFilter("all")
                 }}
-                className="text-xs h-auto py-1 px-3 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium transition-all"
+                className="text-xs h-auto py-2 px-4 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-semibold transition-all"
               >
-                Reset
+                ↻ Reset
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">Month</label>
               <select
@@ -685,37 +697,42 @@ export default function AttendancePage() {
 
         {attendanceLogs.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select Date</h3>
-              <Button onClick={fetchAttendance} disabled={dataLoading} className="gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-medium h-auto py-1.5 px-3">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Select Date to View Records</h3>
+              <Button onClick={fetchAttendance} disabled={dataLoading} className="gap-2 border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-semibold h-auto py-2 px-4 transition-all">
                 <RefreshCw className={`h-4 w-4 ${dataLoading ? "animate-spin" : ""}`} />
-                Refresh Table
+                Refresh
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setSelectedDate(selectedDate === "all" ? null : "all")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   selectedDate === "all"
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 }`}
               >
-                All
+                📊 All
               </button>
-              {getUniqueDates().map(dateStr => (
-                <button
-                  key={dateStr}
-                  onClick={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    selectedDate === dateStr
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  {formatDateForDisplay(dateStr)}
-                </button>
-              ))}
+              {getUniqueDates().map(dateStr => {
+                const date = new Date(dateStr)
+                const isSunday = date.getDay() === 0
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                      selectedDate === dateStr
+                        ? "bg-gradient-to-r from-slate-800 to-slate-900 text-white dark:from-white dark:to-slate-100 dark:text-slate-900 shadow-md hover:shadow-lg"
+                        : `${isSunday ? "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`
+                    }`}
+                    title={isSunday ? "Sunday" : ""}
+                  >
+                    {isSunday ? "☀️" : ""}{formatDateForDisplay(dateStr)}
+                  </button>
+                )
+              })}
             </div>
 
             <div className="space-y-6">
@@ -730,29 +747,30 @@ export default function AttendancePage() {
                       return pass
                     })
                   return dateLogsFiltered.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-b border-slate-200 dark:border-slate-800">
-                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Employee</th>
-                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">In</th>
-                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Out</th>
-                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Hours</th>
-                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                            <th className="text-right py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {dateLogsFiltered.map(log => {
-                            const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
-                            const meetsMinimum = hours.hours >= 8.5
-                            return (
-                              <tr key={log.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors ${log.markedByHR ? "bg-blue-50/30 dark:bg-blue-950/15" : ""}`}>
-                                <td className="py-3 px-4">
+                    <>
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-b border-slate-200 dark:border-slate-800">
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">Employee</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">In</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">Out</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">Hours</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                              <th className="text-right py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {dateLogsFiltered.map(log => {
+                              const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
+                              const meetsMinimum = hours.hours >= 8.5
+                              return (
+                                <tr key={log.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors ${log.markedByHR ? "bg-blue-50/30 dark:bg-blue-950/15" : ""}`}>
+                                  <td className="py-2 px-3">
                                   <div className="flex flex-col gap-0.5">
                                     <button
                                       onClick={() => setEmployeeDetailModal({ employeeCode: log.employeeCode, employeeName: log.employeeName })}
-                                      className="text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                                      className="text-xs font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
                                     >
                                       {log.employeeName}
                                     </button>
@@ -778,7 +796,7 @@ export default function AttendancePage() {
                                     </div>
                                   </div>
                                 </td>
-                                <td className="py-3 px-4">
+                                <td className="py-2 px-3">
                                   <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${log.arrivalStatus === "APPRECIATED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" :
                                     log.arrivalStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
                                       log.arrivalStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" :
@@ -787,7 +805,7 @@ export default function AttendancePage() {
                                     {log.checkInFormatted}
                                   </span>
                                 </td>
-                                <td className="py-3 px-4">
+                                <td className="py-2 px-3">
                                   <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${log.departureStatus === "EARLY" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" :
                                     log.departureStatus === "GRACE" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" :
                                       log.departureStatus === "ON TIME" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
@@ -797,7 +815,7 @@ export default function AttendancePage() {
                                     {log.checkOutFormatted || "Pending"}
                                   </span>
                                 </td>
-                                <td className="py-3 px-4">
+                                <td className="py-2 px-3">
                                   <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${meetsMinimum
                                     ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
                                     : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
@@ -805,13 +823,13 @@ export default function AttendancePage() {
                                     {hours.formatted}
                                   </span>
                                 </td>
-                                <td className="py-3 px-4">
+                                <td className="py-2 px-3">
                                   <StatusBadge
                                     status={log.status}
                                     variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
                                   />
                                 </td>
-                                <td className="py-3 px-4">
+                                <td className="py-2 px-3">
                                   <div className="flex justify-end gap-1">
                                     {log.isEligibleForHalfDay && (
                                       <Button
@@ -879,9 +897,111 @@ export default function AttendancePage() {
                               </tr>
                             )
                           })}
-                        </tbody>
-                      </table>
-                    </div>
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      <div className="md:hidden space-y-3">
+                        {dateLogsFiltered.map(log => {
+                          const hours = calculateTotalHours(log.checkInTime, log.checkOutTime, currentTime)
+                          const meetsMinimum = hours.hours >= 8.5
+                          return (
+                            <Card key={log.id} className={`p-4 border ${log.markedByHR ? "bg-blue-50/30 dark:bg-blue-950/15 border-blue-200 dark:border-blue-800" : "border-slate-200 dark:border-slate-700"}`}>
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <button
+                                      onClick={() => setEmployeeDetailModal({ employeeCode: log.employeeCode, employeeName: log.employeeName })}
+                                      className="text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left truncate"
+                                    >
+                                      {log.employeeName}
+                                    </button>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{log.employeeCode}</span>
+                                      {log.markedByHR && (
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30 flex-shrink-0">
+                                          HR
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <StatusBadge
+                                    status={log.status}
+                                    variant={log.status === "CHECKED OUT" ? "success" : log.status === "CHECKED IN" ? "info" : "warning"}
+                                  />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded">
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Check In</p>
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                      {log.checkInFormatted}
+                                    </span>
+                                  </div>
+                                  <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded">
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Check Out</p>
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                      {log.checkOutFormatted || "Pending"}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Hours</p>
+                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${meetsMinimum
+                                      ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                                      : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                      }`}>
+                                      {hours.formatted}
+                                    </span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {log.status === "CHECKED IN" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          const checkoutTime = getISTDatetimeLocal()
+                                          setForcedCheckoutModal({ id: log.id, employeeName: log.employeeName, checkoutTime })
+                                        }}
+                                        className="h-8 w-8 p-0 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-medium transition-all"
+                                        title="Checkout"
+                                      >
+                                        <LogOut className="h-3.5 w-3.5" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => setNotesModal({ id: log.id, notes: log.notes || "" })}
+                                      className={`h-8 w-8 p-0 font-medium transition-all ${
+                                        log.notes
+                                          ? "bg-slate-900 hover:bg-slate-800 dark:bg-white text-white dark:text-slate-900 dark:hover:bg-slate-100"
+                                          : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+                                      }`}
+                                      title={log.notes ? "Edit notes" : "Add notes"}
+                                    >
+                                      <MessageSquare className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        const checkInLocal = log.checkInTime ? convertUTCToISTDatetimeLocal(log.checkInTime) : getISTDatetimeLocal()
+                                        const checkOutLocal = log.checkOutTime ? convertUTCToISTDatetimeLocal(log.checkOutTime) : ""
+                                        setEditAttendanceModal({ id: log.id, employeeName: log.employeeName, checkInTime: checkInLocal, checkOutTime: checkOutLocal })
+                                      }}
+                                      className="h-8 w-8 p-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-medium transition-all"
+                                      title="Edit attendance times"
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    </>
                   ) : (
                     <Card className="p-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center">
                       <p className="text-slate-600 dark:text-slate-400">No records found for this date</p>

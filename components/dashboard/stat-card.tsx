@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { LineChart, Line, ResponsiveContainer } from "recharts"
-import { TrendingUp, TrendingDown } from "lucide-react"
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react"
 
 interface StatCardProps {
   title: string
@@ -26,26 +26,38 @@ export function StatCard({
   const isPositive = change >= 0
 
   return (
-    <Card className={`relative overflow-hidden p-6 bg-gradient-to-br ${gradient} border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform`}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1 space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <div className="flex items-end gap-3">
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
-            <div className={`flex items-center gap-1 text-sm font-semibold ${isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+    <Card className={`relative overflow-hidden p-4 sm:p-6 bg-gradient-to-br ${gradient} border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 transform group`}>
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-2xl"></div>
+      </div>
+
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+          <p className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider truncate">{title}</p>
+          <div className="flex items-end gap-2 sm:gap-3 flex-wrap">
+            <p className="text-3xl sm:text-4xl font-bold tracking-tight truncate">{value}</p>
+            <div className={`inline-flex items-center gap-1 text-xs sm:text-sm font-bold flex-shrink-0 px-2.5 py-1 rounded-full ${
+              isPositive
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+            }`}>
+              {isPositive ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : (
+                <ArrowDownRight className="w-3.5 h-3.5" />
+              )}
               {Math.abs(change)}%
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">{changeLabel}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate font-medium">{changeLabel}</p>
         </div>
-        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-white dark:bg-slate-800 shadow-md">
+        <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
           {icon}
         </div>
       </div>
 
       {sparklineData && sparklineData.length > 0 && (
-        <div className="mt-4 h-8 -mx-2">
+        <div className="relative z-10 mt-4 sm:mt-5 h-10 -mx-2 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparklineData}>
               <Line
@@ -53,13 +65,15 @@ export function StatCard({
                 dataKey="value"
                 stroke={isPositive ? "#10b981" : "#ef4444"}
                 dot={false}
-                strokeWidth={2}
+                strokeWidth={2.5}
                 isAnimationActive={true}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
+
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-t from-black to-transparent"></div>
     </Card>
   )
 }
