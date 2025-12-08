@@ -32,8 +32,15 @@ export async function POST(req: NextRequest) {
     const istTime = new Date(checkTime)
     console.log("[API] IST time string received:", checkTime, "Stored as:", istTime.toISOString())
     
-    const istDateString = istTime.toISOString().split('T')[0]
-    const todayIST = new Date(istDateString + "T00:00:00.000Z")
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
+    const istDateObj = new Date(istTime.getTime() + IST_OFFSET_MS)
+    const year = istDateObj.getUTCFullYear()
+    const month = String(istDateObj.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(istDateObj.getUTCDate()).padStart(2, '0')
+    const istDateString = `${year}-${month}-${day}`
+    
+    const istMidnightLocal = new Date(`${istDateString}T00:00:00`)
+    const todayIST = new Date(istMidnightLocal.getTime() - IST_OFFSET_MS)
     const tomorrowIST = new Date(todayIST)
     tomorrowIST.setDate(tomorrowIST.getDate() + 1)
 

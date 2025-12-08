@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
           lastLogin: 1,
           status: 1,
           profile: 1,
+          employeeCode: 1,
           _id: 1,
         },
       }

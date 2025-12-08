@@ -72,8 +72,15 @@ export async function POST(req: NextRequest) {
       email: employee.email,
     }
 
-    const istDateString = istNow.toISOString().split('T')[0]
-    const todayIST = new Date(istDateString + "T00:00:00.000Z")
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
+    const istDateObj = new Date(istNow.getTime() + IST_OFFSET_MS)
+    const year = istDateObj.getUTCFullYear()
+    const month = String(istDateObj.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(istDateObj.getUTCDate()).padStart(2, '0')
+    const istDateString = `${year}-${month}-${day}`
+    
+    const istMidnightLocal = new Date(`${istDateString}T00:00:00`)
+    const todayIST = new Date(istMidnightLocal.getTime() - IST_OFFSET_MS)
     const tomorrowIST = new Date(todayIST)
     tomorrowIST.setDate(tomorrowIST.getDate() + 1)
 

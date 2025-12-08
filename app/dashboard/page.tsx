@@ -78,6 +78,9 @@ const payoutSparkline = [
 function EmployeeDashboard() {
   const [attendanceLogs, setAttendanceLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [todayStatus, setTodayStatus] = useState<any>(null)
+  const [todayStatusLoading, setTodayStatusLoading] = useState(true)
+  const [checkingLocation, setCheckingLocation] = useState(false)
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
@@ -98,6 +101,21 @@ function EmployeeDashboard() {
 
     fetchAttendance()
   }, [currentMonth, currentYear])
+
+  useEffect(() => {
+    const fetchTodayStatus = async () => {
+      try {
+        const response = await apiClient.get<any>("/api/attendance/today-checkin")
+        setTodayStatus(response)
+      } catch (error) {
+        console.error("Failed to fetch today's check-in status:", error)
+      } finally {
+        setTodayStatusLoading(false)
+      }
+    }
+
+    fetchTodayStatus()
+  }, [])
 
   const getColorByStatus = (status: string, type: 'arrival' | 'departure') => {
     if (type === 'arrival') {
@@ -174,6 +192,100 @@ function EmployeeDashboard() {
   const presentCount = attendanceLogs.filter(log => log.status === "CHECKED OUT").length
   const workingDays = new Set(attendanceLogs.map(log => new Date(log.checkInTime).toDateString())).size
 
+  const handleCheckInCheckOut = async () => {
+    setCheckingLocation(true)
+    try {
+      // Get current user info with employee code from database
+      const meResponse = await apiClient.get<any>("/api/auth/me")
+      const currentUser = meResponse.user
+      console.log("[Dashboard] Current user:", currentUser)
+      
+      if (!currentUser) {
+        throw new Error("User not authenticated")
+      }
+
+      // Get employee profile with employee code
+      const employeesResponse = await apiClient.get<any>("/api/employees")
+      console.log("[Dashboard] Employees response:", employeesResponse)
+      const employees = employeesResponse.employees || []
+      const currentEmployee = employees.find((emp: any) => emp.id === currentUser.id)
+      console.log("[Dashboard] Current employee:", currentEmployee)
+      
+      if (!currentEmployee || !currentEmployee.employeeCode) {
+        throw new Error("Employee code not found")
+      }
+
+      // Generate QR token for check-in
+      const qrResponse = await apiClient.post<any>("/api/attendance/generate-qr", {})
+      console.log("[Dashboard] QR response:", qrResponse)
+      const encryptedToken = qrResponse.encryptedToken
+      
+      if (!encryptedToken) {
+        throw new Error("Failed to generate QR token")
+      }
+
+      // Get current check-in status to determine if checking in or out
+      const statusResponse = await apiClient.get<any>("/api/attendance/today-checkin")
+      console.log("[Dashboard] Status response:", statusResponse)
+      const isCheckedIn = statusResponse?.isCheckedIn || false
+
+      // Get current time in IST
+      const now = new Date()
+      const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
+      const checkTime = istTime.toISOString()
+      
+      console.log("[Dashboard] Check-in data:", {
+        encryptedToken,
+        employeeCode: currentEmployee.employeeCode,
+        checkTime,
+        type: isCheckedIn ? "checkout" : "checkin",
+      })
+
+      // Submit check-in or check-out
+      const checkInResponse = await apiClient.post<any>("/api/attendance/check-in-public", {
+        encryptedToken,
+        employeeCode: currentEmployee.employeeCode,
+        checkTime,
+        type: isCheckedIn ? "checkout" : "checkin",
+        deviceId: "web-dashboard",
+        latitude: 0,
+        longitude: 0,
+      })
+      console.log("[Dashboard] Check-in response:", checkInResponse)
+
+      // Refresh status
+      const updatedStatus = await apiClient.get<any>("/api/attendance/today-checkin")
+      setTodayStatus(updatedStatus)
+      
+      setCheckingLocation(false)
+      window.location.href = "/dashboard/attendance"
+    } catch (error) {
+      console.error("Check-in/out failed:", error)
+      setCheckingLocation(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "APPRECIATED":
+        return "text-purple-600 dark:text-purple-400"
+      case "ON TIME":
+        return "text-green-600 dark:text-green-400"
+      case "GRACE":
+        return "text-amber-600 dark:text-amber-400"
+      case "LATE":
+        return "text-red-600 dark:text-red-400"
+      default:
+        return "text-blue-600 dark:text-blue-400"
+    }
+  }
+
+  const formatTime = (date: Date | string) => {
+    if (!date) return ""
+    const d = new Date(date)
+    return d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 md:space-y-10">
       <div className="space-y-2 sm:space-y-3">
@@ -203,15 +315,51 @@ function EmployeeDashboard() {
               </div>
             </div>
             <div className="space-y-3">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Check-in Status</p>
-                <p className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">Not Checked In</p>
-              </div>
-              <Link href="/dashboard/attendance" className="block">
-                <Button className="w-full text-sm sm:text-base h-10 sm:h-11 bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all">
-                  Check In Now
-                </Button>
-              </Link>
+              {todayStatusLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-muted-foreground">Loading status...</div>
+                </div>
+              ) : todayStatus?.isCheckedIn ? (
+                <>
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">You have already checked in</p>
+                    <p className={`text-2xl sm:text-3xl font-bold mt-1 ${getStatusColor(todayStatus?.arrivalStatus)}`}>
+                      ✓ Checked In
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3 space-y-2">
+                    <p className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Check-in Time: <span className="font-bold">{formatTime(todayStatus?.checkInTime)}</span>
+                    </p>
+                    {todayStatus?.arrivalStatus && (
+                      <p className={`text-xs sm:text-sm font-medium ${getStatusColor(todayStatus?.arrivalStatus)}`}>
+                        Status: <span className="font-bold">{todayStatus?.arrivalStatus}</span>
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={handleCheckInCheckOut}
+                    disabled={checkingLocation}
+                    className="w-full text-sm sm:text-base h-10 sm:h-11 bg-orange-600 hover:bg-orange-700 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    {checkingLocation ? "Processing..." : "Check Out"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">Check-in Status</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">Not Checked In</p>
+                  </div>
+                  <Button 
+                    onClick={handleCheckInCheckOut}
+                    className="w-full text-sm sm:text-base h-10 sm:h-11 bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all"
+                    disabled={checkingLocation}
+                  >
+                    {checkingLocation ? "Processing..." : "Check In Now"}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </Card>

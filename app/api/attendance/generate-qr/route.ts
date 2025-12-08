@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
       {
         qrCode: qrCodeDataUrl,
         token: uniqueToken,
+        encryptedToken,
         qrUrl,
         expiresIn: officeSettings.qrRotationInterval || 30,
         expiresAt: qrToken.expiresAt,
