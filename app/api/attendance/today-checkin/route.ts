@@ -67,17 +67,18 @@ export async function GET(req: NextRequest) {
       }, { status: 200 })
     }
 
-    const checkInHour = todayLog.checkInTime.getHours()
-    const checkInMinutes = todayLog.checkInTime.getMinutes()
+    const istCheckInTime = new Date(todayLog.checkInTime.getTime() + IST_OFFSET_MS)
+    const checkInHour = istCheckInTime.getUTCHours()
+    const checkInMinutes = istCheckInTime.getUTCMinutes()
     const checkInTimeMinutes = checkInHour * 60 + checkInMinutes
     const officeStartMinutes = 10 * 60
     const gracePeriod = 15
 
-    let arrivalStatus = "APPRECIATED"
+    let arrivalStatus = "LATE"
     if (checkInTimeMinutes < officeStartMinutes) {
       arrivalStatus = "APPRECIATED"
     } else if (checkInTimeMinutes === officeStartMinutes) {
-      arrivalStatus = "ON TIME"
+      arrivalStatus = "PERFECT"
     } else if (checkInTimeMinutes <= officeStartMinutes + gracePeriod) {
       arrivalStatus = "GRACE"
     } else {

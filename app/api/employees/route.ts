@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email already exists" }, { status: 400 })
     }
 
+
+
+
     const hashedPassword = await hashPassword(password)
 
     const newEmployee = {

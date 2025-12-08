@@ -60,14 +60,14 @@ export async function GET(req: NextRequest) {
         const officeStartMinutes = 10 * 60
         const gracePeriod = 15
         
-        let arrivalStatus = "APPRECIATED"
+        let arrivalStatus = "LATE"
         const HALF_DAY_THRESHOLD = 11 * 60
         let isEligibleForHalfDay = false
         
         if (checkInTimeMinutes < officeStartMinutes) {
           arrivalStatus = "APPRECIATED"
         } else if (checkInTimeMinutes === officeStartMinutes) {
-          arrivalStatus = "ON TIME"
+          arrivalStatus = "PERFECT"
         } else if (checkInTimeMinutes <= officeStartMinutes + gracePeriod) {
           arrivalStatus = "GRACE"
         } else {

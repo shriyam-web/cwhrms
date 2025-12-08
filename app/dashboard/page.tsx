@@ -122,6 +122,7 @@ function EmployeeDashboard() {
       switch (status) {
         case 'APPRECIATED':
           return '#a855f7'
+        case 'PERFECT':
         case 'ON TIME':
           return '#10b981'
         case 'GRACE':
@@ -135,6 +136,7 @@ function EmployeeDashboard() {
       switch (status) {
         case 'APPRECIATED':
           return '#a855f7'
+        case 'PERFECT':
         case 'ON TIME':
           return '#10b981'
         case 'GRACE':
@@ -200,18 +202,25 @@ function EmployeeDashboard() {
 
       if (navigator.geolocation) {
         await new Promise<void>((resolve) => {
+          const timeoutId = setTimeout(() => {
+            console.warn("[Dashboard] Geolocation timeout after 15 seconds")
+            resolve()
+          }, 15000)
+          
           navigator.geolocation.getCurrentPosition(
             (position) => {
+              clearTimeout(timeoutId)
               latitude = position.coords.latitude
               longitude = position.coords.longitude
               console.log("[Dashboard] Geolocation obtained:", { latitude, longitude })
               resolve()
             },
             (error) => {
-              console.warn("[Dashboard] Geolocation error:", error)
+              clearTimeout(timeoutId)
+              console.warn("[Dashboard] Geolocation error:", error.code, error.message)
               resolve()
             },
-            { timeout: 5000, enableHighAccuracy: false }
+            { timeout: 12000, enableHighAccuracy: false, maximumAge: 0 }
           )
         })
       }
@@ -295,6 +304,7 @@ function EmployeeDashboard() {
     switch (status) {
       case "APPRECIATED":
         return "text-purple-600 dark:text-purple-400"
+      case "PERFECT":
       case "ON TIME":
         return "text-green-600 dark:text-green-400"
       case "GRACE":

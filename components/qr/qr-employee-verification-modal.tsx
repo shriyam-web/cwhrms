@@ -106,16 +106,25 @@ export function QrEmployeeVerificationModal({
   const getEmployeeLocation = async () => {
     return new Promise<void>((resolve) => {
       if (navigator.geolocation) {
+        const timeoutId = setTimeout(() => {
+          console.warn("[QR Modal] Geolocation timeout after 15 seconds")
+          resolve()
+        }, 15000)
+        
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            clearTimeout(timeoutId)
             setLatitude(position.coords.latitude)
             setLongitude(position.coords.longitude)
+            console.log("[QR Modal] Geolocation obtained:", { latitude: position.coords.latitude, longitude: position.coords.longitude })
             resolve()
           },
           (error) => {
-            console.warn("Geolocation error:", error)
+            clearTimeout(timeoutId)
+            console.warn("[QR Modal] Geolocation error:", error.code, error.message)
             resolve()
           },
+          { timeout: 12000, enableHighAccuracy: false, maximumAge: 0 }
         )
       } else {
         resolve()

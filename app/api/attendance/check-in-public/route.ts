@@ -120,8 +120,9 @@ export async function POST(req: NextRequest) {
     const CHECKIN_TIME = 10 * 60
     const GRACE_PERIOD = 15
     
-    const hours = istTime.getHours()
-    const mins = istTime.getMinutes()
+    const istCheckTime = new Date(istTime.getTime() + IST_OFFSET_MS)
+    const hours = istCheckTime.getUTCHours()
+    const mins = istCheckTime.getUTCMinutes()
     const minutes = hours * 60 + mins
     
     let attendanceStatus = "PRESENT"
