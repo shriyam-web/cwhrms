@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const status = checkOutDate ? "CHECKED OUT" : "CHECKED IN"
 
     const attendanceData = {
-      employeeId: employee._id,
+      employeeId: employee._id.toString(),
       userId: employee.userId,
       employeeCode: employee.employeeCode,
       checkInTime: checkInDate,

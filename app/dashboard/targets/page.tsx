@@ -39,13 +39,13 @@ export default function TargetsPage() {
           </Button>
         </div>
 
-        <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="space-y-6">
+        <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <h3 className="text-lg font-semibold">Weekly Performance</h3>
-              <p className="text-sm text-muted-foreground">Target achievement over time</p>
+              <h3 className="text-base sm:text-lg font-semibold">Weekly Performance</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Target achievement over time</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={performanceData}>
                 <defs>
                   <linearGradient id="achievedGradient" x1="0" y1="0" x2="0" y2="1">
@@ -75,47 +75,47 @@ export default function TargetsPage() {
           </div>
         </Card>
 
-        <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="space-y-6">
+        <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-              <h3 className="text-lg font-semibold">Agent Leaderboard</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Agent Leaderboard</h3>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Rank</th>
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Agent Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Target Type</th>
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Achievement</th>
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Status</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-muted-foreground text-xs whitespace-nowrap">Rank</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-muted-foreground text-xs whitespace-nowrap">Agent Name</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-muted-foreground text-xs whitespace-nowrap">Target Type</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-muted-foreground text-xs whitespace-nowrap">Achievement</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-muted-foreground text-xs whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboard.map((item) => (
                     <tr key={item.rank} className="border-b hover:bg-muted/70 transition-colors duration-200">
-                      <td className="py-3 px-4">
+                      <td className="py-2 sm:py-3 px-2 sm:px-4">
                         <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 text-white text-sm font-bold">
                           {item.rank}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-medium">{item.name}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                      <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">{item.name}</td>
+                      <td className="py-2 sm:py-3 px-2 sm:px-4">
+                        <span className="px-2 sm:px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-medium">
                           {item.target}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                      <td className="py-2 sm:py-3 px-2 sm:px-4">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <div className="w-12 sm:w-20 h-2 bg-muted rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600" style={{ width: item.achieved }}></div>
                           </div>
-                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{item.achieved}</span>
+                          <span className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">{item.achieved}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-2 sm:py-3 px-2 sm:px-4">
                         <StatusBadge
                           status={item.status}
                           variant={item.status === "On Track" ? "success" : "warning"}
@@ -129,27 +129,27 @@ export default function TargetsPage() {
           </div>
         </Card>
 
-        <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="space-y-6">
+        <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search targets..." className="max-w-sm" />
+              <Search className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <Input placeholder="Search targets..." className="max-w-xs sm:max-w-sm text-xs sm:text-sm" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {[
                 { agent: "Vikram Sharma", metric: "Monthly Sales", target: 500000, achieved: 475000 },
                 { agent: "Neha Gupta", metric: "Lead Generation", target: 150, achieved: 130 },
                 { agent: "Arjun Singh", metric: "Revenue", target: 1000000, achieved: 720000 },
               ].map((item, idx) => (
-                <Card key={idx} className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 shadow-md hover:shadow-lg transition-all duration-300">
-                  <div className="space-y-4">
+                <Card key={idx} className="p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <h4 className="font-semibold text-slate-900 dark:text-slate-100">{item.agent}</h4>
-                      <p className="text-sm text-muted-foreground">{item.metric}</p>
+                      <h4 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100">{item.agent}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{item.metric}</p>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-xs sm:text-sm">
                         <span className="font-medium">₹{item.achieved.toLocaleString()}</span>
                         <span className="text-muted-foreground">/ ₹{item.target.toLocaleString()}</span>
                       </div>

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { ObjectId } from "mongodb"
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,9 +33,20 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const attendanceCollection = await db.attendanceLogs()
+    const [attendanceCollection, employeeCollection] = await Promise.all([
+      db.attendanceLogs(),
+      db.employeeProfiles(),
+    ])
 
-    const query: any = { userId: payload.id }
+    const employee = await employeeCollection.findOne({
+      _id: ObjectId.isValid(payload.id) ? new ObjectId(payload.id) : { $eq: payload.id }
+    })
+
+    if (!employee) {
+      return NextResponse.json({ error: "Employee profile not found" }, { status: 404 })
+    }
+
+    const query: any = { employeeCode: employee.employeeCode }
     if (Object.keys(dateFilter).length > 0) {
       query.checkInTime = dateFilter
     }

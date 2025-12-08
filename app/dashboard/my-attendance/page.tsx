@@ -77,29 +77,29 @@ export default function MyAttendancePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 md:space-y-10">
+      <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-10 sm:h-12 w-10 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg flex-shrink-0">
               📋
             </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-slate-50 dark:via-slate-200 dark:to-slate-50 bg-clip-text text-transparent">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-slate-50 dark:via-slate-200 dark:to-slate-50 bg-clip-text text-transparent line-clamp-2">
                 My Attendance
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">View your complete check-in and check-out records with detailed analytics</p>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">View your complete check-in and check-out records with detailed analytics</p>
             </div>
           </div>
         </div>
 
-        <Card className="p-6 sm:p-8 shadow-lg border-0 bg-gradient-to-br from-slate-50 to-slate-50/50 dark:from-slate-950/20 dark:to-slate-950/5">
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <div className="flex-1">
-              <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Month</label>
+        <Card className="p-4 sm:p-6 md:p-8 shadow-lg border-0 bg-gradient-to-br from-slate-50 to-slate-50/50 dark:from-slate-950/20 dark:to-slate-950/5">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground block">Month</label>
               <select
                 value={month}
                 onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="w-full mt-2 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full mt-2 px-3 sm:px-4 py-2 sm:py-3 border border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 {[...Array(12)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -108,12 +108,12 @@ export default function MyAttendancePage() {
                 ))}
               </select>
             </div>
-            <div className="flex-1">
-              <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Year</label>
+            <div className="flex-1 min-w-0">
+              <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground block">Year</label>
               <select
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value))}
-                className="w-full mt-2 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full mt-2 px-3 sm:px-4 py-2 sm:py-3 border border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 {[2024, 2025, 2026].map((y) => (
                   <option key={y} value={y}>
@@ -126,7 +126,7 @@ export default function MyAttendancePage() {
               <Button 
                 onClick={fetchAttendance} 
                 disabled={dataLoading}
-                className="h-11 px-6 sm:px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                className="w-full sm:w-auto h-10 sm:h-11 px-4 sm:px-6 md:px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all"
               >
                 {dataLoading ? "Loading..." : "Refresh"}
               </Button>
@@ -243,132 +243,132 @@ export default function MyAttendancePage() {
             <Accordion type="single" collapsible>
               <AccordionItem value="color-legend" className="border-0">
                 <AccordionTrigger className="group px-0 py-0 hover:no-underline">
-                  <div className="w-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 text-white px-8 py-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gradient-to-br from-purple-400 to-blue-400 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                        <Zap className="h-6 w-6 text-white" />
+                  <div className="w-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 text-white px-3 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
+                      <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-400 to-blue-400 rounded-lg sm:rounded-xl shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                        <Zap className="h-4 sm:h-5 md:h-6 w-4 sm:w-5 md:w-6 text-white" />
                       </div>
-                      <div className="text-left">
-                        <h3 className="text-lg font-bold">Attendance Status Guide</h3>
-                        <p className="text-sm text-slate-300 mt-1">Understand the color-coded attendance system</p>
+                      <div className="text-left min-w-0">
+                        <h3 className="text-sm sm:text-base md:text-lg font-bold">Attendance Status Guide</h3>
+                        <p className="text-xs sm:text-sm text-slate-300 mt-0.5 sm:mt-1 hidden sm:block">Understand the color-coded attendance system</p>
                       </div>
                     </div>
-                    <div className="text-slate-300 group-hover:text-white transition-colors">
-                      <svg className="w-6 h-6 group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="text-slate-300 group-hover:text-white transition-colors flex-shrink-0">
+                      <svg className="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                       </svg>
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="mt-6 bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+                <AccordionContent className="mt-4 sm:mt-6 bg-white dark:bg-slate-900 rounded-lg sm:rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 md:p-8">
                   <div className="space-y-10">
                     <div>
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 bg-purple-600 rounded-lg">
-                          <Clock className="h-5 w-5 text-white" />
+                      <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
+                        <div className="p-2 sm:p-2.5 bg-purple-600 rounded-lg flex-shrink-0">
+                          <Clock className="h-4 sm:h-5 w-4 sm:w-5 text-white" />
                         </div>
-                        <h3 className="font-bold text-xl text-slate-900">Check-In Status</h3>
-                        <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full ml-auto">Target: 10:00 AM IST</span>
+                        <h3 className="font-bold text-base sm:text-xl text-slate-900 dark:text-white">Check-In Status</h3>
+                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ml-auto flex-shrink-0">Target: 10:00 AM IST</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-purple-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <Zap className="h-5 w-5" />
-                              <span className="font-bold text-sm">Before 10:00 AM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <Zap className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">Before 10:00 AM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">🌟 Appreciated</p>
-                            <p className="text-sm text-purple-100">Early arrival shows dedication and commitment</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">🌟 Appreciated</p>
+                            <p className="text-xs sm:text-sm text-purple-100">Early arrival shows dedication and commitment</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-green-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-green-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <CheckCircle className="h-5 w-5" />
-                              <span className="font-bold text-sm">At 10:00 AM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">At 10:00 AM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">✓ Perfect</p>
-                            <p className="text-sm text-green-100">Exactly on time, perfect punctuality</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">✓ Perfect</p>
+                            <p className="text-xs sm:text-sm text-green-100">Exactly on time, perfect punctuality</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-amber-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <AlertCircle className="h-5 w-5" />
-                              <span className="font-bold text-sm">10:01 - 10:15 AM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <AlertCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">10:01 - 10:15 AM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">⏰ Grace Period</p>
-                            <p className="text-sm text-amber-100">Within acceptable grace window</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">⏰ Grace Period</p>
+                            <p className="text-xs sm:text-sm text-amber-100">Within acceptable grace window</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-red-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-red-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <Frown className="h-5 w-5" />
-                              <span className="font-bold text-sm">After 10:15 AM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <Frown className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">After 10:15 AM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">⚠️ Late</p>
-                            <p className="text-sm text-red-100">Beyond grace period - consider adding note</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">⚠️ Late</p>
+                            <p className="text-xs sm:text-sm text-red-100">Beyond grace period - consider adding note</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 bg-blue-600 rounded-lg">
-                          <LogOut className="h-5 w-5 text-white" />
+                      <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
+                        <div className="p-2 sm:p-2.5 bg-blue-600 rounded-lg flex-shrink-0">
+                          <LogOut className="h-4 sm:h-5 w-4 sm:w-5 text-white" />
                         </div>
-                        <h3 className="font-bold text-xl text-slate-900">Check-Out Status</h3>
-                        <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full ml-auto">6:15 PM → 7:00 PM+ IST</span>
+                        <h3 className="font-bold text-base sm:text-xl text-slate-900 dark:text-white">Check-Out Status</h3>
+                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ml-auto flex-shrink-0">6:15 PM → 7:00 PM+ IST</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-red-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-red-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <Frown className="h-5 w-5" />
-                              <span className="font-bold text-sm">Before 6:15 PM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <Frown className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">Before 6:15 PM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">⚠️ Early</p>
-                            <p className="text-sm text-red-100">Incomplete work hours</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">⚠️ Early</p>
+                            <p className="text-xs sm:text-sm text-red-100">Incomplete work hours</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-amber-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <AlertCircle className="h-5 w-5" />
-                              <span className="font-bold text-sm">6:15 - 6:25 PM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <AlertCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">6:15 - 6:25 PM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">⏰ Grace</p>
-                            <p className="text-sm text-amber-100">Acceptable checkout window</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">⏰ Grace</p>
+                            <p className="text-xs sm:text-sm text-amber-100">Acceptable checkout window</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-green-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-green-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <CheckCircle className="h-5 w-5" />
-                              <span className="font-bold text-sm">6:25 PM - 7:00 PM</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">6:25 PM - 7:00 PM</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">✓ Standard</p>
-                            <p className="text-sm text-green-100">Full work hours completed</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">✓ Standard</p>
+                            <p className="text-xs sm:text-sm text-green-100">Full work hours completed</p>
                           </div>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-purple-400 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
                           <div className="relative">
-                            <div className="inline-flex items-center gap-2 mb-3">
-                              <Zap className="h-5 w-5" />
-                              <span className="font-bold text-sm">After 7:00 PM 🎉</span>
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <Zap className="h-4 sm:h-5 w-4 sm:w-5" />
+                              <span className="font-bold text-xs sm:text-sm">After 7:00 PM 🎉</span>
                             </div>
-                            <p className="font-bold text-lg mb-1">⭐ Extra Effort</p>
-                            <p className="text-sm text-purple-100">Beyond standard hours - outstanding!</p>
+                            <p className="font-bold text-base sm:text-lg mb-1">⭐ Extra Effort</p>
+                            <p className="text-xs sm:text-sm text-purple-100">Beyond standard hours - outstanding!</p>
                           </div>
                         </div>
                       </div>

@@ -13,15 +13,15 @@ export function DataTable({ searchPlaceholder, children }: DataTableProps) {
   return (
     <Card className="p-0 shadow-md border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-950">
       <div className="space-y-0">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/50">
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-950 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-            <Search className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-            <Input placeholder={searchPlaceholder} className="border-0 bg-transparent focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 text-xs" />
+        <div className="p-2 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/50">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-950 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+            <Search className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+            <Input placeholder={searchPlaceholder} className="border-0 bg-transparent focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 text-xs sm:text-sm" />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs sm:text-sm">
             {children}
           </table>
         </div>
@@ -53,9 +53,9 @@ export function DataTableRow({ children, className }: { children: React.ReactNod
 }
 
 export function DataTableHeader({ children }: { children: React.ReactNode }) {
-  return <th className="text-left py-2.5 px-3 font-semibold text-white dark:text-slate-200 text-xs tracking-wider uppercase">{children}</th>
+  return <th className="text-left py-2 sm:py-2.5 px-2 sm:px-3 font-semibold text-white dark:text-slate-200 text-xs tracking-wider uppercase whitespace-nowrap">{children}</th>
 }
 
 export function DataTableCell({ children, colSpan, className }: { children: React.ReactNode; colSpan?: number; className?: string }) {
-  return <td colSpan={colSpan} className={`py-2.5 px-3 text-slate-700 dark:text-slate-300 ${className || ""}`}>{children}</td>
+  return <td colSpan={colSpan} className={`py-2 sm:py-2.5 px-2 sm:px-3 text-slate-700 dark:text-slate-300 text-xs sm:text-sm ${className || ""}`}>{children}</td>
 }

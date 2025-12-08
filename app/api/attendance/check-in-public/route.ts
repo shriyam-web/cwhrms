@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
     }
 
     const insertResult = await attendanceCollection.insertOne({
+      employeeId: employee._id.toString(),
       employeeCode,
       userId: employee.userId,
       checkInTime: istTime,

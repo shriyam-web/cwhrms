@@ -129,7 +129,8 @@ export async function POST(req: NextRequest) {
     const checkIn = await prisma.attendanceLog.create({
       data: {
         employeeId: employeeProfile.id,
-        userId: employeeProfile.userId,
+        employeeCode: employee.employeeCode,
+        userId: payload.id,
         checkInTime: istNow,
         status,
         deviceId,

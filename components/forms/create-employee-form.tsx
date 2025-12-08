@@ -144,8 +144,8 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label htmlFor="name" className="text-sm font-medium block mb-1">Name *</label>
           <Input
@@ -285,11 +285,11 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto text-sm">
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="w-full sm:w-auto text-sm">
           {loading ? (editingEmployee ? "Updating..." : "Creating...") : (editingEmployee ? "Update Employee" : "Create Employee")}
         </Button>
       </div>

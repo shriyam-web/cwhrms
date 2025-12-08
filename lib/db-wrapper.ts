@@ -27,6 +27,60 @@ const buildIdQuery = (id: string | ObjectId) => {
   return uniqueConditions.length === 1 ? uniqueConditions[0] : { $or: uniqueConditions }
 }
 
+const convertPrismaWhereToMongo = (where: any): any => {
+  if (!where || typeof where !== 'object') {
+    return where
+  }
+
+  const mongoQuery: any = {}
+
+  for (const [key, value] of Object.entries(where)) {
+    if (value === null || value === undefined) {
+      mongoQuery[key] = value
+      continue
+    }
+
+    if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+      const operators: any = {}
+      for (const [op, opValue] of Object.entries(value)) {
+        switch (op) {
+          case 'gte':
+            operators['$gte'] = opValue
+            break
+          case 'gt':
+            operators['$gt'] = opValue
+            break
+          case 'lte':
+            operators['$lte'] = opValue
+            break
+          case 'lt':
+            operators['$lt'] = opValue
+            break
+          case 'eq':
+            operators['$eq'] = opValue
+            break
+          case 'ne':
+            operators['$ne'] = opValue
+            break
+          case 'in':
+            operators['$in'] = opValue
+            break
+          case 'nin':
+            operators['$nin'] = opValue
+            break
+          default:
+            operators[op] = opValue
+        }
+      }
+      mongoQuery[key] = operators
+    } else {
+      mongoQuery[key] = value
+    }
+  }
+
+  return mongoQuery
+}
+
 export const prisma = {
   agentProfile: {
     async findMany(options?: any) {
@@ -523,6 +577,19 @@ export const prisma = {
       }))
     },
 
+    async findFirst(options?: any) {
+      const collection = await db.attendanceLogs()
+      const query = convertPrismaWhereToMongo(options?.where || {})
+      const log = await collection.findOne(query)
+
+      return log
+        ? {
+            id: log._id.toString(),
+            ...log,
+          }
+        : null
+    },
+
     async create(options: any) {
       const collection = await db.attendanceLogs()
       const result = await collection.insertOne(options.data)
@@ -531,6 +598,21 @@ export const prisma = {
         id: result.insertedId.toString(),
         ...options.data,
       }
+    },
+
+    async update(options: any) {
+      const collection = await db.attendanceLogs()
+      const idQuery = buildIdQuery(options.where.id)
+      await collection.updateOne(idQuery, { $set: options.data })
+
+      const log = await collection.findOne(idQuery)
+
+      return log
+        ? {
+            id: log._id.toString(),
+            ...log,
+          }
+        : null
     },
   },
 

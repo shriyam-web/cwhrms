@@ -101,7 +101,6 @@ export function Sidebar({ className }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-2 sm:py-3 rounded-xl text-xs sm:text-sm md:text-base text-slate-300 hover:text-white hover:bg-gradient-to-r hover:from-blue-600/30 hover:to-indigo-600/30 transition-all duration-200 group relative overflow-hidden"
             >
               <span className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-400 to-indigo-600 transform origin-top scale-y-0 group-hover:scale-y-100 transition-transform duration-200"></span>

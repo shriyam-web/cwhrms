@@ -4,6 +4,8 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { useAuth } from "@/lib/use-auth"
+import { apiClient } from "@/lib/api-client"
+import { useEffect, useState } from "react"
 import {
   BarChart,
   Bar,
@@ -19,7 +21,7 @@ import {
   LineChart,
   Line,
 } from "recharts"
-import { Users, Zap, CheckCircle, Banknote, Clock, TrendingUp } from "lucide-react"
+import { Users, Zap, CheckCircle, Banknote, Clock, TrendingUp, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -74,6 +76,104 @@ const payoutSparkline = [
 ]
 
 function EmployeeDashboard() {
+  const [attendanceLogs, setAttendanceLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth() + 1
+  const currentYear = currentDate.getFullYear()
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const response = await apiClient.get<any>(
+          `/api/attendance/my-logs?month=${currentMonth}&year=${currentYear}`
+        )
+        setAttendanceLogs(response.attendanceLogs || [])
+      } catch (error) {
+        console.error("Failed to fetch attendance:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAttendance()
+  }, [currentMonth, currentYear])
+
+  const getColorByStatus = (status: string, type: 'arrival' | 'departure') => {
+    if (type === 'arrival') {
+      switch (status) {
+        case 'APPRECIATED':
+          return '#a855f7'
+        case 'ON TIME':
+          return '#10b981'
+        case 'GRACE':
+          return '#f59e0b'
+        case 'LATE':
+          return '#ef4444'
+        default:
+          return '#6b7280'
+      }
+    } else {
+      switch (status) {
+        case 'APPRECIATED':
+          return '#a855f7'
+        case 'ON TIME':
+          return '#10b981'
+        case 'GRACE':
+          return '#f59e0b'
+        case 'EARLY':
+          return '#ef4444'
+        case 'NOT CHECKED OUT':
+          return '#f97316'
+        default:
+          return '#6b7280'
+      }
+    }
+  }
+
+  const generateGraphData = () => {
+    const uniqueDates = new Map<string, any>()
+    
+    attendanceLogs.forEach((log) => {
+      const date = new Date(log.checkInTime)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      if (!uniqueDates.has(dateStr)) {
+        uniqueDates.set(dateStr, {
+          date: dateStr,
+          dateFormatted: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          status: log.status,
+          arrivalStatus: log.arrivalStatus,
+          departureStatus: log.departureStatus,
+          checkInColor: getColorByStatus(log.arrivalStatus, 'arrival'),
+          checkOutColor: log.departureStatus ? getColorByStatus(log.departureStatus, 'departure') : '#d1d5db',
+          checkedIn: 1,
+          checkedOut: log.status === "CHECKED OUT" ? 1 : 0,
+        })
+      }
+    })
+
+    const sortedDates = Array.from(uniqueDates.values())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 7)
+      .reverse()
+
+    return sortedDates.map(item => ({
+      name: item.dateFormatted,
+      "Check-in": item.checkedIn,
+      "Check-out": item.checkedOut,
+      status: item.status,
+      arrivalStatus: item.arrivalStatus,
+      departureStatus: item.departureStatus,
+      checkInColor: item.checkInColor,
+      checkOutColor: item.checkOutColor,
+    }))
+  }
+
+  const graphData = generateGraphData()
+  const presentCount = attendanceLogs.filter(log => log.status === "CHECKED OUT").length
+  const workingDays = new Set(attendanceLogs.map(log => new Date(log.checkInTime).toDateString())).size
+
   return (
     <div className="space-y-6 sm:space-y-8 md:space-y-10">
       <div className="space-y-2 sm:space-y-3">
@@ -129,7 +229,7 @@ function EmployeeDashboard() {
             </div>
             <div className="space-y-3">
               <div className="flex items-end justify-between">
-                <span className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400">18</span>
+                <span className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400">{presentCount}</span>
                 <span className="text-green-600 dark:text-green-400 text-xs sm:text-sm font-bold bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">days</span>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground font-medium">Present this month</p>
@@ -146,19 +246,17 @@ function EmployeeDashboard() {
           </div>
           <div className="relative z-10 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-muted-foreground">Latest Payout</h3>
+              <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-muted-foreground">Payroll Status</h3>
               <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
-                <Banknote className="w-5 h-5 text-white" />
+                <AlertCircle className="w-5 h-5 text-white" />
               </div>
             </div>
             <div className="space-y-3">
-              <span className="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400">₹45,000</span>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Last payout date</p>
-              <Link href="/dashboard/payouts" className="block">
-                <Button variant="outline" className="w-full text-sm sm:text-base h-10 sm:h-11 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all">
-                  View Payroll
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                <AlertCircle className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                <p className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">Payroll functionality is coming soon</p>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">This feature is not yet integrated with your dashboard</p>
             </div>
           </div>
         </Card>
@@ -175,29 +273,67 @@ function EmployeeDashboard() {
               View All →
             </Link>
           </div>
-          <div className="w-full h-72 sm:h-96 bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-md">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={attendanceData.slice(0, 7)}>
-                <defs>
-                  <linearGradient id="employeePresent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.2} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--muted-foreground)" tick={{ fontSize: 13, fontWeight: 500 }} />
-                <YAxis stroke="var(--muted-foreground)" tick={{ fontSize: 13 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                  }}
-                />
-                <Bar dataKey="present" fill="url(#employeePresent)" radius={[12, 12, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-purple-500"></div>
+                <span className="text-xs font-medium text-muted-foreground">Early/Appreciated</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-green-500"></div>
+                <span className="text-xs font-medium text-muted-foreground">On Time</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-yellow-500"></div>
+                <span className="text-xs font-medium text-muted-foreground">Grace Period</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                <span className="text-xs font-medium text-muted-foreground">Late/Early Out</span>
+              </div>
+            </div>
+            <div className="w-full h-72 sm:h-96 bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-md">
+              {loading ? (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">Loading attendance data...</p>
+                </div>
+              ) : graphData.length === 0 ? (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">No attendance records available for this month</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={graphData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tick={{ fontSize: 13, fontWeight: 500 }} />
+                    <YAxis stroke="var(--muted-foreground)" tick={{ fontSize: 13 }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                      }}
+                      formatter={(value, name) => {
+                        if (value === 0) return ["-", name]
+                        return ["✓", name]
+                      }}
+                      labelFormatter={(label) => `Date: ${label}`}
+                    />
+                    <Bar dataKey="Check-in" radius={[12, 12, 0, 0]}>
+                      {graphData.map((entry, index) => (
+                        <Cell key={`cell-in-${index}`} fill={entry.checkInColor} opacity={0.9} />
+                      ))}
+                    </Bar>
+                    <Bar dataKey="Check-out" radius={[12, 12, 0, 0]}>
+                      {graphData.map((entry, index) => (
+                        <Cell key={`cell-out-${index}`} fill={entry.checkOutColor} opacity={0.9} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       </Card>
@@ -220,15 +356,6 @@ function EmployeeDashboard() {
                   <span className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     View Attendance
-                  </span>
-                  <span className="text-xs">→</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/attendance/qr-display" className="block">
-                <Button className="w-full justify-between text-sm sm:text-base h-11 sm:h-12 bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all group/btn">
-                  <span className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    View QR Code
                   </span>
                   <span className="text-xs">→</span>
                 </Button>

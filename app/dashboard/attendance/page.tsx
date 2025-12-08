@@ -1299,8 +1299,8 @@ export default function AttendancePage() {
       )}
 
       {notesModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-lg p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <MessageSquare className="h-4 w-4" />
@@ -1328,18 +1328,18 @@ export default function AttendancePage() {
                 <p className="text-xs text-slate-500 mt-1">{notesModal.notes.length}/500</p>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
                 <Button
                   onClick={() => setNotesModal(null)}
                   disabled={notesLoading}
-                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveNotes}
                   disabled={notesLoading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium"
                 >
                   {notesLoading ? "Saving..." : "Save"}
                 </Button>
@@ -1351,8 +1351,8 @@ export default function AttendancePage() {
 
 
       {forcedCheckoutModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-lg p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <LogOutIcon className="h-4 w-4" />
@@ -1368,7 +1368,7 @@ export default function AttendancePage() {
 
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-slate-600 mb-2">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-2">
                   Are you sure you want to mark <span className="font-semibold">{forcedCheckoutModal.employeeName}</span> as checked out?
                 </p>
                 <div className="space-y-3">
@@ -1391,18 +1391,18 @@ export default function AttendancePage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
                 <Button
                   onClick={() => setForcedCheckoutModal(null)}
                   disabled={forcedCheckoutLoading}
-                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleForcedCheckout}
                   disabled={forcedCheckoutLoading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
                 >
                   {forcedCheckoutLoading ? "Processing..." : "Confirm"}
                 </Button>
@@ -1413,8 +1413,8 @@ export default function AttendancePage() {
       )}
 
       {manualMarkModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-3xl p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-md md:max-w-2xl p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <CheckCircle className="h-4 w-4" />
@@ -1462,36 +1462,36 @@ export default function AttendancePage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                     Check-in Time (IST) *
                   </label>
                   <Input
                     type="datetime-local"
                     value={manualMarkModal.checkInTime}
                     onChange={(e) => setManualMarkModal({ ...manualMarkModal, checkInTime: e.target.value })}
-                    className="w-full"
+                    className="w-full text-xs sm:text-sm"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Standard: 10:00 AM</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                     Check-out Time (IST) - Optional
                   </label>
                   <Input
                     type="datetime-local"
                     value={manualMarkModal.checkOutTime}
                     onChange={(e) => setManualMarkModal({ ...manualMarkModal, checkOutTime: e.target.value })}
-                    className="w-full"
+                    className="w-full text-xs sm:text-sm"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Standard: 6:25 PM - 7:00 PM</p>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-3">📋 Time Guidelines</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs">
                   <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-blue-100 dark:border-blue-800">
                     <p className="font-medium text-blue-700 dark:text-blue-400">🌟 Before 10 AM</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Appreciated</p>
@@ -1511,9 +1511,9 @@ export default function AttendancePage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 p-3 sm:p-4 rounded-lg border border-purple-200 dark:border-purple-800">
                 <p className="text-xs font-semibold text-purple-900 dark:text-purple-300 mb-3">🎯 Checkout Guidelines</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs">
                   <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded border border-red-100 dark:border-red-800">
                     <p className="font-medium text-red-700 dark:text-red-400">⚠️ Before 6:15 PM</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">Incomplete Hours</p>
@@ -1542,18 +1542,18 @@ export default function AttendancePage() {
                 </p>
               </div>
 
-              <div className="flex gap-2 justify-end pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-2">
                 <Button
                   onClick={() => setManualMarkModal(null)}
                   disabled={manualMarkLoading}
-                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleManualMarkAttendance}
                   disabled={manualMarkLoading || !manualMarkModal.employeeCode || !manualMarkModal.checkInTime}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all text-sm"
                 >
                   {manualMarkLoading ? "Marking..." : "Mark Attendance"}
                 </Button>
@@ -1564,8 +1564,8 @@ export default function AttendancePage() {
       )}
 
       {employeeDetailModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-4xl p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-xl md:max-w-4xl p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <User className="h-4 w-4" />
@@ -1639,8 +1639,8 @@ export default function AttendancePage() {
       )}
 
       {editAttendanceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-lg p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <Edit className="h-4 w-4" />
@@ -1695,27 +1695,27 @@ export default function AttendancePage() {
 
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Update Times</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                       Check-in Time (IST) *
                     </label>
                     <Input
                       type="datetime-local"
                       value={editAttendanceModal.checkInTime}
                       onChange={(e) => setEditAttendanceModal({ ...editAttendanceModal, checkInTime: e.target.value })}
-                      className="w-full"
+                      className="w-full text-xs sm:text-sm"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                       Check-out Time (IST) - Optional
                     </label>
                     <Input
                       type="datetime-local"
                       value={editAttendanceModal.checkOutTime}
                       onChange={(e) => setEditAttendanceModal({ ...editAttendanceModal, checkOutTime: e.target.value })}
-                      className="w-full"
+                      className="w-full text-xs sm:text-sm"
                     />
                   </div>
                 </div>
@@ -1727,18 +1727,18 @@ export default function AttendancePage() {
                 </p>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
                 <Button
                   onClick={() => setEditAttendanceModal(null)}
                   disabled={editAttendanceLoading}
-                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleEditAttendance}
                   disabled={editAttendanceLoading || !editAttendanceModal.checkInTime}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition-all text-sm"
                 >
                   {editAttendanceLoading ? "Saving..." : "Save Changes"}
                 </Button>
@@ -1749,8 +1749,8 @@ export default function AttendancePage() {
       )}
 
       {halfDayModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md p-5 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-sm sm:max-w-md p-4 sm:p-5 my-4 shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                 <Clock className="h-4 w-4" />
@@ -1793,18 +1793,18 @@ export default function AttendancePage() {
                 </p>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
                 <Button
                   onClick={() => setHalfDayModal(null)}
                   disabled={halfDayModalLoading}
-                  className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 font-medium text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleMarkHalfDay}
                   disabled={halfDayModalLoading || !halfDayModal.reason.trim()}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white font-medium transition-all"
+                  className="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white font-medium transition-all text-sm"
                 >
                   {halfDayModalLoading ? "Marking..." : "Confirm Half Day"}
                 </Button>
