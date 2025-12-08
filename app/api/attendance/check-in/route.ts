@@ -96,9 +96,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (existingCheckIn) {
+      const checkOutData: any = { checkOutTime: istNow }
+      if (latitude !== null) checkOutData.checkOutLatitude = latitude
+      if (longitude !== null) checkOutData.checkOutLongitude = longitude
+      
       const checkOut = await prisma.attendanceLog.update({
         where: { id: existingCheckIn.id },
-        data: { checkOutTime: istNow },
+        data: checkOutData,
       })
 
       await prisma.qrToken.update({

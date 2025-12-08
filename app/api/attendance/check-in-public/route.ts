@@ -96,11 +96,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === "checkout" && existingCheckIn) {
+      const checkoutData: any = { checkOutTime: istTime, updatedAt: istTime }
+      if (latitude !== null) checkoutData.checkOutLatitude = latitude
+      if (longitude !== null) checkoutData.checkOutLongitude = longitude
+      
       await attendanceCollection.updateOne(
         { _id: existingCheckIn._id },
-        { $set: { checkOutTime: istTime, updatedAt: istTime } }
+        { $set: checkoutData }
       )
-      console.log("[API] Check-out recorded for:", employeeCode)
+      console.log("[API] Check-out recorded for:", employeeCode, "with location:", { latitude, longitude })
 
       return NextResponse.json(
         {

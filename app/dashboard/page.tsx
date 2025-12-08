@@ -195,6 +195,27 @@ function EmployeeDashboard() {
   const handleCheckInCheckOut = async () => {
     setCheckingLocation(true)
     try {
+      let latitude = null
+      let longitude = null
+
+      if (navigator.geolocation) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              latitude = position.coords.latitude
+              longitude = position.coords.longitude
+              console.log("[Dashboard] Geolocation obtained:", { latitude, longitude })
+              resolve()
+            },
+            (error) => {
+              console.warn("[Dashboard] Geolocation error:", error)
+              resolve()
+            },
+            { timeout: 5000, enableHighAccuracy: false }
+          )
+        })
+      }
+
       // Get current user info with employee code from database
       const meResponse = await apiClient.get<any>("/api/auth/me")
       const currentUser = meResponse.user
@@ -239,26 +260,31 @@ function EmployeeDashboard() {
         employeeCode: currentEmployee.employeeCode,
         checkTime,
         type: isCheckedIn ? "checkout" : "checkin",
+        latitude,
+        longitude,
       })
 
       // Submit check-in or check-out
-      const checkInResponse = await apiClient.post<any>("/api/attendance/check-in-public", {
+      const payload: any = {
         encryptedToken,
         employeeCode: currentEmployee.employeeCode,
         checkTime,
         type: isCheckedIn ? "checkout" : "checkin",
         deviceId: "web-dashboard",
-        latitude: 0,
-        longitude: 0,
-      })
+      }
+
+      if (latitude !== null) payload.latitude = latitude
+      if (longitude !== null) payload.longitude = longitude
+
+      const checkInResponse = await apiClient.post<any>("/api/attendance/check-in-public", payload)
       console.log("[Dashboard] Check-in response:", checkInResponse)
 
       // Refresh status
       const updatedStatus = await apiClient.get<any>("/api/attendance/today-checkin")
+      console.log("[Dashboard] Updated status after check:", updatedStatus)
       setTodayStatus(updatedStatus)
       
       setCheckingLocation(false)
-      window.location.href = "/dashboard/attendance"
     } catch (error) {
       console.error("Check-in/out failed:", error)
       setCheckingLocation(false)
@@ -319,6 +345,21 @@ function EmployeeDashboard() {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-sm text-muted-foreground">Loading status...</div>
                 </div>
+              ) : todayStatus?.checkOutTime ? (
+                <>
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">Attendance marked for today</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400 mt-1">✓ Complete</p>
+                  </div>
+                  <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-3 space-y-2">
+                    <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">
+                      Check-in: <span className="font-bold">{formatTime(todayStatus?.checkInTime)}</span>
+                    </p>
+                    <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">
+                      Check-out: <span className="font-bold">{formatTime(todayStatus?.checkOutTime)}</span>
+                    </p>
+                  </div>
+                </>
               ) : todayStatus?.isCheckedIn ? (
                 <>
                   <div>

@@ -58,6 +58,15 @@ export async function GET(req: NextRequest) {
       }, { status: 200 })
     }
 
+    if (todayLog.checkOutTime) {
+      return NextResponse.json({ 
+        isCheckedIn: false,
+        checkInTime: todayLog.checkInTime,
+        checkOutTime: todayLog.checkOutTime,
+        arrivalStatus: null,
+      }, { status: 200 })
+    }
+
     const checkInHour = todayLog.checkInTime.getHours()
     const checkInMinutes = todayLog.checkInTime.getMinutes()
     const checkInTimeMinutes = checkInHour * 60 + checkInMinutes
