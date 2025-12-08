@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
       let arrivalStatus = "LATE"
       if (checkInTimeMinutes < officeStartMinutes) {
         arrivalStatus = "APPRECIATED"
-      } else if (checkInTimeMinutes === officeStartMinutes) {
-        arrivalStatus = "PERFECT"
+      } else if (checkInTimeMinutes <= officeStartMinutes) {
+        arrivalStatus = "ON TIME"
       } else if (checkInTimeMinutes <= officeStartMinutes + gracePeriod) {
         arrivalStatus = "GRACE"
       } else {
