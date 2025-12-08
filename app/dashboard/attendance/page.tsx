@@ -397,7 +397,11 @@ export default function AttendancePage() {
       if (log.checkInTime) {
         const date = new Date(log.checkInTime)
         const dateStr = date.toISOString().split('T')[0]
-        dates.add(dateStr)
+        const logMonth = date.getMonth() + 1
+        const logYear = date.getFullYear()
+        if (logMonth === month && logYear === year) {
+          dates.add(dateStr)
+        }
       }
     })
     
