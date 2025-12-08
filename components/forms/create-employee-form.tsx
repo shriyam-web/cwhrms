@@ -33,6 +33,7 @@ const buildFormData = (employee?: any) => ({
   zipCode: employee?.zipCode || "",
   dateOfBirth: formatDate(employee?.dateOfBirth),
   baseSalary: employee?.baseSalary ?? 0,
+  role: employee?.role || "EMPLOYEE",
 })
 
 export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: CreateEmployeeFormProps) {
@@ -58,7 +59,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
     }
   }, [editingEmployee?.id])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
@@ -111,6 +112,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
           state: formData.state,
           zipCode: formData.zipCode,
           baseSalary: formData.baseSalary,
+          role: formData.role,
         }
         await apiClient.put(`/api/employees/${fullEmployeeData?.id || editingEmployee.id}`, updateData)
         toast.success("Employee updated successfully")
@@ -128,6 +130,7 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
           ...(formData.zipCode && { zipCode: formData.zipCode }),
           ...(formData.dateOfBirth && { dateOfBirth: formData.dateOfBirth }),
           baseSalary: formData.baseSalary,
+          role: formData.role,
         }
         console.log("Creating employee with data:", createData)
         await apiClient.post("/api/employees", createData)
@@ -230,6 +233,19 @@ export function CreateEmployeeForm({ onSuccess, onClose, editingEmployee }: Crea
             onChange={handleChange}
             placeholder="Job Title"
           />
+        </div>
+        <div>
+          <label htmlFor="role" className="text-sm font-medium block mb-1">Role</label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+          >
+            <option value="EMPLOYEE">Employee</option>
+            <option value="HR">HR</option>
+          </select>
         </div>
         <div>
           <label htmlFor="baseSalary" className="text-sm font-medium block mb-1">Base Salary</label>

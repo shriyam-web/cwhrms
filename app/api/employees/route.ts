@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       phone: emp.phone,
       position: emp.profile?.type || emp.position || "",
       status: emp.status,
+      role: emp.role || "EMPLOYEE",
     }))
 
     return NextResponse.json({ employees: formattedEmployees }, { status: 200 })
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, password, employeeCode, phone, position, address, city, state, zipCode, dateOfBirth, baseSalary } = body
+    const { name, email, password, employeeCode, phone, position, address, city, state, zipCode, dateOfBirth, baseSalary, role } = body
 
     if (!name || !email || !password || !employeeCode) {
       return NextResponse.json(
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
       zipCode: zipCode || "",
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       baseSalary: baseSalary || 0,
+      role: role || "EMPLOYEE",
       status: "ACTIVE",
       createdAt: new Date(),
       updatedAt: new Date(),

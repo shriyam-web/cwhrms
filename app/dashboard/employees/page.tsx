@@ -19,6 +19,7 @@ interface Employee {
   phone?: string
   position?: string
   status: string
+  role?: string
 }
 
 export default function EmployeesPage() {
@@ -100,6 +101,7 @@ export default function EmployeesPage() {
             <DataTableHeader>Name</DataTableHeader>
             <DataTableHeader>Employee Code</DataTableHeader>
             <DataTableHeader>Position</DataTableHeader>
+            <DataTableHeader>Role</DataTableHeader>
             <DataTableHeader>Email</DataTableHeader>
             <DataTableHeader>Phone</DataTableHeader>
             <DataTableHeader>Status</DataTableHeader>
@@ -108,13 +110,13 @@ export default function EmployeesPage() {
           <DataTableBody>
             {loading ? (
               <DataTableRow>
-                <DataTableCell colSpan={7} className="text-center py-8">
+                <DataTableCell colSpan={8} className="text-center py-8">
                   <div>Loading employees...</div>
                 </DataTableCell>
               </DataTableRow>
             ) : employees.length === 0 ? (
               <DataTableRow>
-                <DataTableCell colSpan={7} className="text-center py-8">
+                <DataTableCell colSpan={8} className="text-center py-8">
                   <div className="text-muted-foreground">No employees found</div>
                 </DataTableCell>
               </DataTableRow>
@@ -126,6 +128,11 @@ export default function EmployeesPage() {
                   </DataTableCell>
                   <DataTableCell>{emp.employeeCode}</DataTableCell>
                   <DataTableCell>{emp.position || "-"}</DataTableCell>
+                  <DataTableCell>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${emp.role === "HR" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"}`}>
+                      {emp.role || "EMPLOYEE"}
+                    </span>
+                  </DataTableCell>
                   <DataTableCell>{emp.email}</DataTableCell>
                   <DataTableCell>{emp.phone || "-"}</DataTableCell>
                   <DataTableCell>

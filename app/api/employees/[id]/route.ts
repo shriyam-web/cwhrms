@@ -14,6 +14,7 @@ const updateEmployeeSchema = z.object({
   state: z.string().optional(),
   zipCode: z.string().optional(),
   baseSalary: z.number().optional(),
+  role: z.string().optional(),
 }).strict()
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -107,6 +108,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     if (data.state !== undefined) updateData.state = data.state
     if (data.zipCode !== undefined) updateData.zipCode = data.zipCode
     if (data.baseSalary !== undefined) updateData.baseSalary = data.baseSalary
+    if (data.role !== undefined) updateData.role = data.role
 
     await employeeCollection.updateOne(
       { _id: employeeId },
