@@ -24,6 +24,7 @@ import {
 import { Users, Zap, CheckCircle, Banknote, Clock, TrendingUp, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 
 const attendanceData = [
   { name: "Mon", present: 45, absent: 5, late: 3 },
@@ -76,11 +77,13 @@ const payoutSparkline = [
 ]
 
 function EmployeeDashboard() {
+  const { toast } = useToast()
   const [attendanceLogs, setAttendanceLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [todayStatus, setTodayStatus] = useState<any>(null)
   const [todayStatusLoading, setTodayStatusLoading] = useState(true)
   const [checkingLocation, setCheckingLocation] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
@@ -196,34 +199,76 @@ function EmployeeDashboard() {
 
   const handleCheckInCheckOut = async () => {
     setCheckingLocation(true)
+    setTimeLeft(15)
     try {
       let latitude = null
       let longitude = null
 
-      if (navigator.geolocation) {
-        await new Promise<void>((resolve) => {
-          const timeoutId = setTimeout(() => {
-            console.warn("[Dashboard] Geolocation timeout after 15 seconds")
-            resolve()
-          }, 15000)
-          
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              clearTimeout(timeoutId)
-              latitude = position.coords.latitude
-              longitude = position.coords.longitude
-              console.log("[Dashboard] Geolocation obtained:", { latitude, longitude })
-              resolve()
-            },
-            (error) => {
-              clearTimeout(timeoutId)
-              console.warn("[Dashboard] Geolocation error:", error.code, error.message)
-              resolve()
-            },
-            { timeout: 12000, enableHighAccuracy: false, maximumAge: 0 }
-          )
+      if (!navigator.geolocation) {
+        toast({
+          title: "Geolocation not supported",
+          description: "Your browser does not support geolocation. Please use a different device.",
+          variant: "destructive",
         })
+        setCheckingLocation(false)
+        return
       }
+
+      await new Promise<void>((resolve, reject) => {
+        const timer = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer)
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+
+        const timeoutId = setTimeout(() => {
+          console.warn("[Dashboard] Geolocation timeout after 15 seconds")
+          clearInterval(timer)
+          toast({
+            title: "Location timeout",
+            description: "Could not fetch location in time. Please try again.",
+            variant: "destructive",
+          })
+          reject(new Error("Geolocation timeout"))
+        }, 15000)
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clearTimeout(timeoutId)
+            clearInterval(timer)
+            latitude = position.coords.latitude
+            longitude = position.coords.longitude
+            console.log("[Dashboard] Geolocation obtained:", { latitude, longitude })
+            resolve()
+          },
+          (error) => {
+            clearTimeout(timeoutId)
+            clearInterval(timer)
+            console.warn("[Dashboard] Geolocation error:", error.code, error.message)
+            
+            let errorMessage = "Failed to get location."
+            if (error.code === 1) {
+              errorMessage = "Location permission denied. Please enable location services to check in."
+            } else if (error.code === 2) {
+              errorMessage = "Location unavailable. Please check your GPS settings."
+            } else if (error.code === 3) {
+              errorMessage = "Location request timed out."
+            }
+
+            toast({
+              title: "Location Error",
+              description: errorMessage,
+              variant: "destructive",
+            })
+            reject(new Error(errorMessage))
+          },
+          { timeout: 12000, enableHighAccuracy: false, maximumAge: 0 }
+        )
+      })
 
       // Get current user info with employee code from database
       const meResponse = await apiClient.get<any>("/api/auth/me")
@@ -293,10 +338,26 @@ function EmployeeDashboard() {
       console.log("[Dashboard] Updated status after check:", updatedStatus)
       setTodayStatus(updatedStatus)
       
+      toast({
+        title: isCheckedIn ? "Checked Out Successfully" : "Checked In Successfully",
+        description: `Your attendance has been marked at ${formatTime(new Date())}`,
+        variant: "default",
+        className: "bg-green-500 text-white border-none",
+      })
+
       setCheckingLocation(false)
     } catch (error) {
       console.error("Check-in/out failed:", error)
       setCheckingLocation(false)
+      
+      // Only show generic error if it wasn't already handled (like geolocation errors)
+      if (error instanceof Error && !error.message.includes("Location") && !error.message.includes("Geolocation")) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to process request",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -368,6 +429,11 @@ function EmployeeDashboard() {
                     <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">
                       Check-out: <span className="font-bold">{formatTime(todayStatus?.checkOutTime)}</span>
                     </p>
+                    {todayStatus?.latitude && todayStatus?.longitude && (
+                      <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300 border-t border-green-200 dark:border-green-800 pt-2 mt-2">
+                        Location: <a href={`https://www.google.com/maps?q=${todayStatus.latitude},${todayStatus.longitude}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-green-900 dark:hover:text-green-100">{todayStatus.latitude.toFixed(4)}, {todayStatus.longitude.toFixed(4)}</a>
+                      </p>
+                    )}
                   </div>
                 </>
               ) : todayStatus?.isCheckedIn ? (
@@ -387,13 +453,18 @@ function EmployeeDashboard() {
                         Status: <span className="font-bold">{todayStatus?.arrivalStatus}</span>
                       </p>
                     )}
+                    {todayStatus?.latitude && todayStatus?.longitude && (
+                      <p className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 border-t border-blue-200 dark:border-blue-800 pt-2 mt-2">
+                        Location: <a href={`https://www.google.com/maps?q=${todayStatus.latitude},${todayStatus.longitude}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900 dark:hover:text-blue-100">{todayStatus.latitude.toFixed(4)}, {todayStatus.longitude.toFixed(4)}</a>
+                      </p>
+                    )}
                   </div>
                   <Button 
                     onClick={handleCheckInCheckOut}
                     disabled={checkingLocation}
                     className="w-full text-sm sm:text-base h-10 sm:h-11 bg-orange-600 hover:bg-orange-700 shadow-lg hover:shadow-xl transition-all"
                   >
-                    {checkingLocation ? "Processing..." : "Check Out"}
+                    {checkingLocation ? `Processing... ${timeLeft > 0 ? `(${timeLeft}s)` : ''}` : "Check Out"}
                   </Button>
                 </>
               ) : (
@@ -407,7 +478,7 @@ function EmployeeDashboard() {
                     className="w-full text-sm sm:text-base h-10 sm:h-11 bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all"
                     disabled={checkingLocation}
                   >
-                    {checkingLocation ? "Processing..." : "Check In Now"}
+                    {checkingLocation ? `Processing... ${timeLeft > 0 ? `(${timeLeft}s)` : ''}` : "Check In Now"}
                   </Button>
                 </>
               )}

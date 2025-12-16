@@ -64,6 +64,10 @@ export async function GET(req: NextRequest) {
         checkInTime: todayLog.checkInTime,
         checkOutTime: todayLog.checkOutTime,
         arrivalStatus: null,
+        latitude: todayLog.latitude,
+        longitude: todayLog.longitude,
+        checkOutLatitude: todayLog.checkOutLatitude,
+        checkOutLongitude: todayLog.checkOutLongitude,
       }, { status: 200 })
     }
 

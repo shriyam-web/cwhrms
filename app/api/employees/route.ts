@@ -78,7 +78,6 @@ export async function POST(req: NextRequest) {
 
 
 
-
     const hashedPassword = await hashPassword(password)
 
     const newEmployee = {
