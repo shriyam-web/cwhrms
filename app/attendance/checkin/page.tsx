@@ -139,6 +139,35 @@ function CheckinContent() {
     }
   }, [currentTime, todayCheckInTime, attendanceType])
 
+  const getGeolocation = async (retries = 2): Promise<{ latitude: number | null; longitude: number | null }> => {
+    if (!navigator.geolocation) {
+      return { latitude: null, longitude: null }
+    }
+
+    return new Promise((resolve) => {
+      const attemptGeolocation = (attemptsLeft: number) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            })
+          },
+          (error) => {
+            if (attemptsLeft > 0) {
+              setTimeout(() => attemptGeolocation(attemptsLeft - 1), 1000)
+            } else {
+              resolve({ latitude: null, longitude: null })
+            }
+          },
+          { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+        )
+      }
+
+      attemptGeolocation(retries)
+    })
+  }
+
   const handleSubmitAttendance = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -157,24 +186,10 @@ function CheckinContent() {
     setLoading(true)
 
     try {
-      let latitude = null
-      let longitude = null
+      setMessage("Getting location...")
+      setMessageType("warning")
 
-      if (navigator.geolocation) {
-        await new Promise<void>((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              latitude = position.coords.latitude
-              longitude = position.coords.longitude
-              resolve()
-            },
-            () => {
-              resolve()
-            },
-            { timeout: 5000, enableHighAccuracy: false }
-          )
-        })
-      }
+      const { latitude, longitude } = await getGeolocation(2)
 
       const istTime = getISTNow()
 
