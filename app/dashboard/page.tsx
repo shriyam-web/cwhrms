@@ -204,6 +204,17 @@ function EmployeeDashboard() {
       let latitude = null
       let longitude = null
 
+      // Check for Secure Context (HTTPS) which is required for Geolocation
+      if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        toast({
+          title: "Insecure Connection",
+          description: "Geolocation requires a secure (HTTPS) connection. Please access the site via HTTPS.",
+          variant: "destructive",
+        })
+        setCheckingLocation(false)
+        return
+      }
+
       if (!navigator.geolocation) {
         toast({
           title: "Geolocation not supported",
@@ -276,7 +287,7 @@ function EmployeeDashboard() {
       console.log("[Dashboard] Current user:", currentUser)
       
       if (!currentUser) {
-        throw new Error("User not authenticated")
+        throw new Error("User session invalid. Please log in again.")
       }
 
       // Get employee profile with employee code
@@ -286,8 +297,12 @@ function EmployeeDashboard() {
       const currentEmployee = employees.find((emp: any) => emp.id === currentUser.id)
       console.log("[Dashboard] Current employee:", currentEmployee)
       
-      if (!currentEmployee || !currentEmployee.employeeCode) {
-        throw new Error("Employee code not found")
+      if (!currentEmployee) {
+        throw new Error("Employee profile not found. Please contact HR.")
+      }
+
+      if (!currentEmployee.employeeCode) {
+        throw new Error("Employee code missing. Please contact HR to update your profile.")
       }
 
       // Generate QR token for check-in
@@ -346,18 +361,32 @@ function EmployeeDashboard() {
       })
 
       setCheckingLocation(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Check-in/out failed:", error)
       setCheckingLocation(false)
       
-      // Only show generic error if it wasn't already handled (like geolocation errors)
-      if (error instanceof Error && !error.message.includes("Location") && !error.message.includes("Geolocation")) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to process request",
-          variant: "destructive",
-        })
+      let errorMessage = "Failed to process request"
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === "string") {
+        errorMessage = error
+      } else if (typeof error === "object" && error !== null && "message" in error) {
+        errorMessage = String(error.message)
+      } else if (typeof error === "object" && error !== null && "error" in error) {
+        errorMessage = String(error.error)
       }
+
+      // Skip if already handled (location errors)
+      if (errorMessage.includes("Location") || errorMessage.includes("Geolocation")) {
+        return
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage || "An unknown error occurred",
+        variant: "destructive",
+      })
     }
   }
 
